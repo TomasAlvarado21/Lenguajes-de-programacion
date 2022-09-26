@@ -31,11 +31,29 @@ s-Cmd ::=
 (deftype s-Cmd
   (create cr list s-Cmd)
   (insert list in s-Cmd)
-  (from fr SELECT regs WHERE s-Cond)
+  (FromSelectWhere symb regs s-Cond)
 
+
+#|
+FromSelectWhere ::=
+    |From <sym>
+    |Select regs
+    |WHERE s-Cond
+|#
+(deftype FromSelectWhere
+  (from symb)
+  (select regs)
+  (where s-Cond))
 
 #| PARTE B |#
 ;; parse :: s-Cmd -> Cmd
+
+  (define (parse s-Cmd)
+    (match s-Cmd
+      [(cr list s-Cmd) (create cr list s-Cmd)]
+      [(list in s-Cmd) (insert list in s-Cmd)]
+      [(symb regs s-Cond) (FromSelectWhere symb regs s-Cond)])
+      
 
 
 #| ==============================
