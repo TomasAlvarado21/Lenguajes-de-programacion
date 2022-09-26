@@ -44,7 +44,7 @@ s-Cmd ::=
 (define (parse-Cmd s-Cmd)
   (match s-Cmd
     [(list 'CREATE tab lista s-Cmd) (CREATE tab lista (parse-Cmd s-Cmd))]
-    [(list 'INSERT lista in s-Cmd) (INSERT lista in (parse-Cmd s-Cmd))]
+    [(list 'INSERT lista in s-Cmd) (INSERT 'lista in (parse-Cmd s-Cmd))]
     [(list 'FROM symb 'SELECT 'regs 'WHERE s-Cond) (FROM symb 'SELECT 'regs 'WHERE (parse-Cond s-Cond))]))
 
 
