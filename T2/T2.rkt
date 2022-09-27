@@ -16,7 +16,7 @@ s-Cond ::=
 |#
 
 
-(deftype Cond
+(deftype s-Cond
   (< a x)
   (> b y)
   (= c z)
@@ -30,8 +30,8 @@ s-Cmd ::=
     |INSERT (list sym) <sym> s-Cmd
     |FROM <sym> SELECT regs WHERE s-Cond
 |#
-(deftype Cmd
-  (CREATE tab list s-Cmd)
+(deftype s-Cmd
+  (CREATE tab lista s-Cmd)
   (INSERT lista in s-Cmd)
   (FROM symb SELECT regs WHERE s-Cond))
 
@@ -44,7 +44,7 @@ s-Cmd ::=
 (define (parse-Cmd s-Cmd)
   (match s-Cmd
     [(list 'CREATE tab lista s-Cmd) (CREATE tab lista (parse-Cmd s-Cmd))]
-    [(list 'INSERT lista in s-Cmd) (INSERT 'lista in (parse-Cmd s-Cmd))]
+    [(list 'INSERT lista in s-Cmd) (INSERT lista in (parse-Cmd s-Cmd))]
     [(list 'FROM symb 'SELECT 'regs 'WHERE s-Cond) (FROM symb 'SELECT 'regs 'WHERE (parse-Cond s-Cond))]))
 
 
@@ -65,15 +65,19 @@ s-Cmd ::=
 (test (parse-Cond '(< b 3)) (< 'b 3))
 (test (parse-Cond '(> c 12)) (> 'c 12))
 
-(test (parse-Cmd '(CREATE nombre (list a b c))) (CREATE 'nombre 
+(test (parse-Cmd '(CREATE nombre (a b c)
+                          (FROM s SELECT regs WHERE (= s 1))))
+      (CREATE 'nombre '(a b c)
+              (FROM 's 'SELECT 'regs 'WHERE (= 's 1))))
+
+
 (test (parse-Cmd '(FROM s SELECT regs WHERE (= s 1))) (FROM 's 'SELECT 'regs 'WHERE (= 's 1)))
 
-#|
-(test (parse-Cmd '(INSERT (list 3 2 1) blabla
-                          ))
-      (INSERT (3 2 1) 'blabla
-              ))
 
+(test (parse-Cmd '(INSERT (3 2 1) blabla
+                          (FROM blabla SELECT regs WHERE (= blabla 1))))
+      (INSERT '(3 2 1) 'blabla
+              (FROM 'blabla 'SELECT 'regs 'WHERE (= 'blabla 1))))
 
 
 
@@ -82,25 +86,23 @@ s-Cmd ::=
                                  (INSERT (2 2 4) toki-toki-ti
                                          (INSERT (1 2 3) toki-toki-ti
                                                  (FROM toki-toki-ti SELECT regs WHERE (= empanadas 4)))))))
-      ((CREATE 'toki-toki-ti '('mesa 'terremotos 'empanadas)
-               (INSERT (list 3 5 4) 'toki-toki-ti
-                       (INSERT (list 2 2 4) 'toki-toki-ti
-                               (INSERT (list 1 2 3) 'toki-toki-ti
-                                       (FROM 'toki-toki-ti 'SELECT 'regs 'WHERE (= 'empanadas 4))))))))
- |#                
+      (CREATE 'toki-toki-ti '(mesa terremotos empanadas)
+               (INSERT '(3 5 4) 'toki-toki-ti
+                       (INSERT '(2 2 4) 'toki-toki-ti
+                               (INSERT '(1 2 3) 'toki-toki-ti
+                                       (FROM 'toki-toki-ti 'SELECT 'regs 'WHERE (= 'empanadas 4)))))))
+             
 
 #| ==============================
             EJERCICIO 2
    ============================== |#
 
-#| PARTE A 
+#| PARTE A |#
 ;; check-table :: Cmd -> Boolean / Error
+
 (define (check-table Cmd)
   (match parse
-    []))|#
-(define (check-table)
-  (
-
+    []))
 
 
 #| PARTE B |#
