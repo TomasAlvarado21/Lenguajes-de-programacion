@@ -65,14 +65,33 @@ s-Cmd ::=
             EJERCICIO 2
    ============================== |#
 
+(deftype env
+  (mtEnv)
+  (aEnv tabs cols-name cols env))
+
+
 #| PARTE A |#
 ;; check-table :: Cmd -> Boolean / Error
 
 (define (check-table Cmd)
-  (match parse
-    []))
+  (match Cmd
+    [(CREATE tab lista Cmd)(if (eq? INSERT-in tab)#t ()]
+    ))
 
+;Empty-env
+(define empty-env  (mtEnv))
 
+;Extend-env
+(define extend-env aEnv) 
+
+;Env-lookup LISTO
+(define (env-lookup x env)
+  (match env
+    [(mtEnv) (error 'env-lookup "free identifier: ~a" x)]
+    [(aEnv tabs cols)
+     (if (eq? tabs x)
+         val
+         (env-lookup x rest))]))
 #| PARTE B |#
 ;; check-arity :: Cmd -> Boolean / Error
 
