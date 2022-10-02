@@ -14,7 +14,7 @@ s-Cond ::=
     | & s-Cond s-Cond
     | or s-Cond s-Cond
 |#
-
+;;Aqui se define el deftype de la expresion s-Cond
 
 (deftype s-Cond
   (< a x)
@@ -30,6 +30,8 @@ s-Cmd ::=
     |INSERT (list sym) <sym> s-Cmd
     |FROM <sym> SELECT regs WHERE s-Cond
 |#
+;;Aqui se define el deftype de la expresion s-Cmd
+
 (deftype s-Cmd
   (CREATE tab lista s-Cmd)
   (INSERT lista in s-Cmd)
@@ -40,6 +42,7 @@ s-Cmd ::=
 
 #| PARTE B |#
 ;; parse :: s-Cmd -> Cmd
+;;Aqui definimos el parse para la expresion s-Cmd que nos deberia retornar un Cmd
 
 (define (parse-Cmd s-Cmd)
   (match s-Cmd
@@ -64,7 +67,10 @@ s-Cmd ::=
 #| ==============================
             EJERCICIO 2
    ============================== |#
-
+;; <env> ::= mtEnv
+;; | (aEnv <tabs> <cols-name> <cols> <env>)
+;; Aqui definimos el ambiente sobre el cual trabajaremos, tendra las tablas, los nombres de las columnas,
+;; las columnas y el ambiente
 (deftype env
   (mtEnv)
   (aEnv tabs cols-name cols env))
@@ -72,11 +78,11 @@ s-Cmd ::=
 
 #| PARTE A |#
 ;; check-table :: Cmd -> Boolean / Error
+;; esta funcion sirve para verificar si la tablas existen o no
 
 (define (check-table Cmd)
   (match Cmd
-    [(CREATE tab lista Cmd)(if (eq? INSERT-in tab)#t ()]
-    ))
+    [(CREATE tab lista Cmd)(if (eq? INSERT-in tab)#t ())]))
 
 ;Empty-env
 (define empty-env  (mtEnv))
