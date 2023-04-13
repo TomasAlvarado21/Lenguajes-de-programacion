@@ -36,19 +36,9 @@
   (num n)
   (id x)
   (bool b)
-  (pair expr expr2)
-  (add1 expr)
   (add l r)
   (lt l r)
-  (eq l r)
-  (neq expr)
-  (and l r)
-  (or l r)
-  (fst expr)
-  (snd expr)
-  (if expr expr2 expr3)
-  (with id named-expr body)
-  (id named-expr)
+  ; ...
   )
 
 ;; tipo inductivo para los valores del lenguaje
