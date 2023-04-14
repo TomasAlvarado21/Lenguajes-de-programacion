@@ -36,7 +36,7 @@
   (num n)
   (id x)
   (bool b)
-  (pair expr expr2)
+  (cons expr expr2)
   (add1 expr)
   (add l r)
   (lt l r)
@@ -46,7 +46,7 @@
   (or l r)
   (fst expr)
   (snd expr)
-  (if con t f)
+  (if0 con t f)
   (with list-expr body)
   (app expr)
   )
@@ -69,22 +69,25 @@
     [(? number?) (num se)]
     [(? symbol?) (id se)]
     [(? boolean?) (bool se)]
+    [(list 'add1 e1) (add1 (parse-expr e1))] 
+    [(list identificador valor) (list (parse-expr identificador) (parse-expr valor))]
     [(list '+ e1 e2) (add (parse-expr e1) (parse-expr e2))]
     [(list '< e1 e2) (lt (parse-expr e1) (parse-expr e2))]
+    [(list '= e1 e2) (eq (parse-expr e1) (parse-expr e2))]
     [(list '! e1) (neq (parse-expr e1))]
     [(list '&& e1 e2) (and (parse-expr e1) (parse-expr e2))]
     [(list '|| e1 e2) (or (parse-expr e1) (parse-expr e2))]
     [(list 'fst e1) (fst (parse-expr e1))]
     [(list 'snd e1) (snd (parse-expr e1))]
-    [(list 'if con e1 e2) (if (parse-expr con) (parse-expr e1)(parse-expr e2))]
-
+    [(list 'if con e1 e2) (if0 (parse-expr con) (parse-expr e1)(parse-expr e2))]
+    [(list 'with lista body) (with (map (λ (par) (map parse-expr par)) lista) (parse-expr body))]
     [_ (error "not yet implemented")]
     ))
 
 ;; parse-fundef :: ...
 (define (parse-fundef sf)
-  ; ...
-  (error "not yet implemented"))
+  (match sf
+    [(list 'define name arg ... body) (fundef (parse-expr name) (map parse-expr arg) (parse-expr body))]))
 
 
 ;; interp :: ...
@@ -101,10 +104,15 @@
   (def (prog funs main) (parse sp))
   (interp main empty-env funs))
 
-
 (parse-expr '{with {{x 9} {y {+ 1 4}}}
         {+ x y}})
 
+
+(parse-expr '{with {{x 1}{y 2}{z 3}}
+              {+ x z}})
+
+(parse-expr '{= {x 1} {y 2}})
+(parse-expr '{add1 x})
 
 #|
 (with (list ((id x) (num 9)) ((id y) (add (num 1) (num 4)))) (add (id x) (id y)))
