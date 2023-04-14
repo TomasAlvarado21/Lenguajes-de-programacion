@@ -17,7 +17,7 @@
            | {+ <expr> <expr>}
            | {< <expr> <expr>}
            | {= <expr> <expr>}
-           | {! <expr> <expr>}
+           | {! <expr>}
            | {&& <expr> <expr>}
            | {|| <expr> <expr>}
            | {fst <expr>}
@@ -46,9 +46,9 @@
   (or l r)
   (fst expr)
   (snd expr)
-  (if expr expr2 expr3)
-  (with id named-expr body)
-  (id named-expr)
+  (if con t f)
+  (with list-expr body)
+  (app expr)
   )
 
 ;; tipo inductivo para los valores del lenguaje
@@ -71,7 +71,13 @@
     [(? boolean?) (bool se)]
     [(list '+ e1 e2) (add (parse-expr e1) (parse-expr e2))]
     [(list '< e1 e2) (lt (parse-expr e1) (parse-expr e2))]
-    ; ...
+    [(list '! e1) (neq (parse-expr e1))]
+    [(list '&& e1 e2) (and (parse-expr e1) (parse-expr e2))]
+    [(list '|| e1 e2) (or (parse-expr e1) (parse-expr e2))]
+    [(list 'fst e1) (fst (parse-expr e1))]
+    [(list 'snd e1) (snd (parse-expr e1))]
+    [(list 'if con e1 e2) (if (parse-expr con) (parse-expr e1)(parse-expr e2))]
+
     [_ (error "not yet implemented")]
     ))
 
@@ -95,3 +101,22 @@
   (def (prog funs main) (parse sp))
   (interp main empty-env funs))
 
+
+(parse-expr '{with {{x 9} {y {+ 1 4}}}
+        {+ x y}})
+
+
+#|
+(with (list ((id x) (num 9)) ((id y) (add (num 1) (num 4)))) (add (id x) (id y)))
+
+
+
+
+
+{+ x {+ y z}}
+e1 = x
+e2 = {+ y z}
+(add (parse-expr x) (parse-expr {+ y z}))
+(add (id x) (add (parse-expr y) (parse-expr z)))
+(add (id x) (add (id y) (id z)))
+|#
