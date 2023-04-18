@@ -71,6 +71,7 @@
     [(? boolean?) (bool se)]
     [(list 'add1 e1) (add1 (parse-expr e1))] 
     [(list identificador valor) (list (parse-expr identificador) (parse-expr valor))]
+    
     [(list '+ e1 e2) (add (parse-expr e1) (parse-expr e2))]
     [(list '< e1 e2) (lt (parse-expr e1) (parse-expr e2))]
     [(list '= e1 e2) (eq (parse-expr e1) (parse-expr e2))]
@@ -96,7 +97,7 @@
     [(num n) (numV n)]
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
-    ; ...
+    ;[(pair l r) (pairV lV rV)]
     [_ (error "not yet implemented")]
     ))
 
@@ -113,6 +114,7 @@
 
 (parse-expr '{= {x 1} {y 2}})
 (parse-expr '{add1 x})
+(parse-fundef '{{define {sum x y z} {+ x {+ y z}}}})
 
 #|
 (with (list ((id x) (num 9)) ((id y) (add (num 1) (num 4)))) (add (id x) (id y)))
