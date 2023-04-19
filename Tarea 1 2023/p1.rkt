@@ -70,8 +70,7 @@
     [(? symbol?) (id se)]
     [(? boolean?) (bool se)]
     [(list 'add1 e1) (add1 (parse-expr e1))] 
-    [(list identificador valor) (list (parse-expr identificador) (parse-expr valor))]
-    
+    [(list identificador valor) (list (parse-expr identificador) (parse-expr valor))] 
     [(list '+ e1 e2) (add (parse-expr e1) (parse-expr e2))]
     [(list '< e1 e2) (lt (parse-expr e1) (parse-expr e2))]
     [(list '= e1 e2) (eq (parse-expr e1) (parse-expr e2))]
@@ -82,6 +81,7 @@
     [(list 'snd e1) (snd (parse-expr e1))]
     [(list 'if con e1 e2) (if0 (parse-expr con) (parse-expr e1)(parse-expr e2))]
     [(list 'with lista body) (with (map (λ (par) (map parse-expr par)) lista) (parse-expr body))]
+
     [_ (error "not yet implemented")]
     ))
 
@@ -91,13 +91,24 @@
     [(list 'define name arg ... body) (fundef (parse-expr name) (map parse-expr arg) (parse-expr body))]))
 
 
-;; interp :: ...
+;; interp :: Expr → Env → list Fundef → Val
 (define (interp e env funs)
   (match e
     [(num n) (numV n)]
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
-    ;[(pair l r) (pairV lV rV)]
+    [(cons l r) (consV lV rV)]
+    [(lt l r) (< (interp l) (interp r))]
+    [(eq e1 e2) (= (interp e1) (interp e2))]
+    [(add  e1 e2) (+ (interp e1) (interp e2))]
+    [(neq e1) (! (interp e1))]
+    [(and e1 e2) (&& (interp e1)(interp e2))]
+    [(or e1 e2) (|| (interp e1) (interp e2))]
+    [(fst e1) (car (interp e1))]
+    [(snd e1) (cdr (interp e1))]
+    [(if0 con e1 e2) (if (interp con) (interp e1) (interp e2))];; corregir https://users.dcc.uchile.cl/~etanter/play-interps/Arithmetic_Expressions_with_if0.html
+    [(add1 e1) (+ (interp e1) 1)]
+    [(with lista body) (interp)] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     [_ (error "not yet implemented")]
     ))
 
