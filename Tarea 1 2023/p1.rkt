@@ -93,22 +93,25 @@
 
 ;; interp :: Expr → Env → list Fundef → Val
 (define (interp e env funs)
-  (match e
+  (match m
     [(num n) (numV n)]
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
     [(cons l r) (consV lV rV)]
-    [(lt l r) (< (interp l) (interp r))]
-    [(eq e1 e2) (= (interp e1) (interp e2))]
-    [(add  e1 e2) (+ (interp e1) (interp e2))]
-    [(neq e1) (! (interp e1))]
-    [(and e1 e2) (&& (interp e1)(interp e2))]
-    [(or e1 e2) (|| (interp e1) (interp e2))]
-    [(fst e1) (car (interp e1))]
-    [(snd e1) (cdr (interp e1))]
-    [(if0 con e1 e2) (if (interp con) (interp e1) (interp e2))];; corregir https://users.dcc.uchile.cl/~etanter/play-interps/Arithmetic_Expressions_with_if0.html
-    [(add1 e1) (+ (interp e1) 1)]
-    [(with lista body) (interp)] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
+    [(lt l r) (< (interp l env funs) (interp r env funs))]
+    [(eq e1 e2) (= (interp e1 env funs) (interp e2 env funs))]
+    [(add  e1 e2) (+ (interp e1 env funs) (interp e2 env funs))]
+    [(neq e1) (! (interp e1 env funs))]
+    [(and e1 e2) (&& (interp e1 env funs)(interp e2 env funs))]
+    [(or e1 e2) (|| (interp e1 env funs) (interp e2 env funs))]
+    [(fst e1) (car (interp e1 env funs))]
+    [(snd e1) (cdr (interp e1 env funs))]
+    [(if0 con e1 e2) (if (interp con) (interp e1 env funs) (interp e2 env funs))];; corregir https://users.dcc.uchile.cl/~etanter/play-interps/Arithmetic_Expressions_with_if0.html
+    [(add1 e1) (+ (interp e1 env funs) 1)]
+    [(with lista body)
+     ((interp
+       (foldr extend-env lista) env funs)
+      (interp body env funs))] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     [_ (error "not yet implemented")]
     ))
 
