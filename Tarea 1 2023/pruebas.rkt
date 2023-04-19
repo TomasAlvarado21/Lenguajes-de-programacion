@@ -8,7 +8,9 @@
   [match list
     [(list a b ... (list c d) ... body)  (a b (list c d) body )]])
 |#
-
+(define (bla list)
+  [match list
+    (list 
 
 (define lista-prueba (list (list 2 3 6) (list 4 5 8) 7)) 
 (prueba lista-prueba)
