@@ -81,7 +81,7 @@
     [(list 'snd e1) (snd (parse-expr e1))]
     [(list 'if con e1 e2) (if0 (parse-expr con) (parse-expr e1)(parse-expr e2))]
     [(list 'with lista body) (with (map (λ (par) (map parse-expr par)) lista) (parse-expr body))]
-
+    [(list f a) (app f (parse-expr a))]
     [_ (error "not yet implemented")]
     ))
 
@@ -93,24 +93,24 @@
 
 ;; interp :: Expr → Env → list Fundef → Val
 (define (interp e env funs)
-  (match m
+  (match e
     [(num n) (numV n)]
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
-    [(cons l r) (consV lV rV)]
+    ;[(cons l r) (consV lV rV)]
     [(lt l r) (< (interp l env funs) (interp r env funs))]
     [(eq e1 e2) (= (interp e1 env funs) (interp e2 env funs))]
     [(add  e1 e2) (+ (interp e1 env funs) (interp e2 env funs))]
-    [(neq e1) (! (interp e1 env funs))]
-    [(and e1 e2) (&& (interp e1 env funs)(interp e2 env funs))]
-    [(or e1 e2) (|| (interp e1 env funs) (interp e2 env funs))]
+    [(neq e1) (not (interp e1 env funs))]
+    [(and e1 e2) (and (interp e1 env funs) (interp e2 env funs))]
+    ;[(or e1 e2) (or (interp e1 env funs) (interp e2 env funs))]
     [(fst e1) (car (interp e1 env funs))]
     [(snd e1) (cdr (interp e1 env funs))]
-    [(if0 con e1 e2) (if (interp con) (interp e1 env funs) (interp e2 env funs))];; corregir https://users.dcc.uchile.cl/~etanter/play-interps/Arithmetic_Expressions_with_if0.html
+    [(if0 con e1 e2) (if (interp con env funs) (interp e1 env funs) (interp e2 env funs))]
     [(add1 e1) (+ (interp e1 env funs) 1)]
     [(with lista body)
      ((interp
-       (foldr extend-env lista) env funs)
+       (map extend-env lista) env funs)
       (interp body env funs))] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     [_ (error "not yet implemented")]
     ))
@@ -128,7 +128,7 @@
 
 (parse-expr '{= {x 1} {y 2}})
 (parse-expr '{add1 x})
-(parse-fundef '{{define {sum x y z} {+ x {+ y z}}}})
+(parse-fundef '{define {triple x} {+ x {+ x x}}})
 
 #|
 (with (list ((id x) (num 9)) ((id y) (add (num 1) (num 4)))) (add (id x) (id y)))
