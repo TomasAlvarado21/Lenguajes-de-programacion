@@ -105,7 +105,7 @@
     [(add  e1 e2) (+ (interp e1 env funs) (interp e2 env funs))]
     [(neq e1) (not (interp e1 env funs))]
     [(and0 e1 e2) (and (interp e1 env funs) (interp e2 env funs))]
-    [(or0 e1 blaaa) (or (interp e1 env funs) (interp blaaa env funs))]
+    [(or0 e1 e2) (or (interp e1 env funs) (interp e2 env funs))]
     [(fst e1) (car (interp e1 env funs))]
     [(snd e1) (cdr (interp e1 env funs))]
     [(if0 con e1 e2) (if (interp con env funs) (interp e1 env funs) (interp e2 env funs))]

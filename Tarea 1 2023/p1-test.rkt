@@ -1,5 +1,16 @@
 #lang play
 (require "p1.rkt")
+(define env1 (list (cons 'x (numV 10)) (cons 'y (boolV #t))))
+
+(define funs1 (list (fundef (id 'triple) (list (id 'x)) (add (id 'x) (add (id 'x) (id 'x))))))
+
+
+
+; prueba de operadores lógicos
+(test (interp (or0 (bool #f) (bool #t)) env1 funs1) (boolV #f))
+;(test (interp (and0 (bool #f) (bool #t)) env1 funs1) (boolV #f))
+
+
 
 ;test integracion with, cons, snd, fst y app
 (test (parse-expr    '{with {{x 9} {y {cons 1 {cons 3 4}}}}
