@@ -55,7 +55,20 @@
 (deftype Val
   (numV n)
   (boolV b)
-  (pairV lV rV))
+  (pairV lV rV)
+  (closureV id body env))
+
+(define (numV-val val)
+  (match val
+    [(numV n) n]))
+
+(define (boolV-bool val)
+  (match val
+    [(boolV b) b]))
+
+(define (pairV-list val)
+  (match val
+    [(pairV l r) (list l r)]))
 
 ;; parse :: ...
 (define (parse sp)
@@ -99,10 +112,11 @@
     [(num n) (numV n)]
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
-    ;[(cons l r) (consV lV rV)]
-    [(lt l r) (< (interp l env funs) (interp r env funs))]
+    [(cons0 l r) (pairV (interp l env funs) (interp r env funs))]
+    [(cons l r) (pairV (interp l env funs) (interp r env funs))]
+    [(lt l r) (boolV (< (numV-val (interp l env funs)) (numV-val (interp r env funs))))]
     [(eq e1 e2) (= (interp e1 env funs) (interp e2 env funs))]
-    [(add  e1 e2) (+ (interp e1 env funs) (interp e2 env funs))]
+    [(add e1 e2) (numV (+ (numV-val(interp e1 env funs)) (numV-val (interp e2 env funs))))]
     [(neq e1) (not (interp e1 env funs))]
     [(and0 e1 e2) (and (interp e1 env funs) (interp e2 env funs))]
     [(or0 e1 e2) (or (interp e1 env funs) (interp e2 env funs))]
@@ -110,12 +124,33 @@
     [(snd e1) (cdr (interp e1 env funs))]
     [(if0 con e1 e2) (if (interp con env funs) (interp e1 env funs) (interp e2 env funs))]
     [(add1 e1) (+ (interp e1 env funs) 1)]
-    [(with lista body)
-     ((interp
-       (map extend-env lista) env funs)
-      (interp body env funs))] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
-    [_ (error "not yet implemented")]
+    [(with list body)     (let* ((syms (map first list))            (vals (map (lambda (e) (interp e env funs)) (map second list)))            (new-env (extend-env syms vals env)))       (interp body new-env funs))]
+    
+    [(app f arg-expr)
+     (def (fundef _ farg fbody) (lookup-fundef f funs))
+     (interp fbody
+             funs
+             (extend-env farg
+                         (interp arg-expr funs env)
+                         empty-env))]
+
+
+
+         
+    ;[_ (error "not yet implemented")] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     ))
+
+
+
+ 
+;; lookup-fundef :: sym Listof(FunDef) -> FunDef
+(define (lookup-fundef f funs)
+  (match funs
+    ['() (error 'lookup-fundef "function not found: ~a" f)]
+    [(cons (and fd (fundef fn _ _)) rest)
+     (if (symbol=? fn f)
+         fd
+         (lookup-fundef f rest))]))
 
 (define (run sp)
   (def (prog funs main) (parse sp))
@@ -124,20 +159,3 @@
 
 
 
-
-
-
-#|
-(with (list ((id x) (num 9)) ((id y) (add (num 1) (num 4)))) (add (id x) (id y)))
-
-
-
-
-
-{+ x {+ y z}}
-e1 = x
-e2 = {+ y z}
-(add (parse-expr x) (parse-expr {+ y z}))
-(add (id x) (add (parse-expr y) (parse-expr z)))
-(add (id x) (add (id y) (id z)))
-|#
