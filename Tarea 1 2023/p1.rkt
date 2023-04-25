@@ -62,6 +62,10 @@
   (match val
     [(numV n) n]))
 
+(define (pairV-val par)
+  (match par
+    [(pairV e1 e2) (cons e1 e2)]))
+
 (define (boolV-bool val)
   (match val
     [(boolV b) b]))
@@ -92,7 +96,9 @@
     [(list 'fst e1) (fst (parse-expr e1))]
     [(list 'snd e1) (snd (parse-expr e1))]
     [(list 'if con e1 e2) (if0 (parse-expr con) (parse-expr e1)(parse-expr e2))]
-    [(list 'with lista body) (with (map (λ (par) (map parse-expr par)) lista) (parse-expr body))]
+    
+    [(list 'with lista body) (with (map (λ (par) (list (car par) (parse-expr (car (cdr par))))) lista) (parse-expr body))]
+
     [(list 'cons e1 e2) (cons0 (parse-expr e1) (parse-expr e2))]
     [(list f a ...) (app f (map parse-expr a))]
     [_ (error "not yet implemented")]
@@ -101,7 +107,7 @@
 ;; parse-fundef :: ...
 (define (parse-fundef sf)
   (match sf
-    [(list 'define (list name arg ...) body) (fundef (parse-expr name) (map parse-expr arg) (parse-expr body))]))
+    [(list 'define (list name arg ...) body) (fundef name arg (parse-expr body))]))
 
 
 
@@ -113,44 +119,63 @@
     [(id x) (env-lookup x env)]
     [(bool b) (boolV b)]
     [(cons0 l r) (pairV (interp l env funs) (interp r env funs))]
-    [(cons l r) (pairV (interp l env funs) (interp r env funs))]
+    ;[(cons l r) (pairV (interp l env funs) (interp r env funs))]
     [(lt l r) (boolV (< (numV-val (interp l env funs)) (numV-val (interp r env funs))))]
     [(eq e1 e2) (= (interp e1 env funs) (interp e2 env funs))]
     [(add e1 e2) (numV (+ (numV-val(interp e1 env funs)) (numV-val (interp e2 env funs))))]
     [(neq e1) (not (interp e1 env funs))]
     [(and0 e1 e2) (and (interp e1 env funs) (interp e2 env funs))]
     [(or0 e1 e2) (or (interp e1 env funs) (interp e2 env funs))]
-    [(fst e1) (car (interp e1 env funs))]
-    [(snd e1) (cdr (interp e1 env funs))]
+    [(fst e1) (car (pairV-val (interp e1 env funs)))]
+    [(snd e1) (cdr (pairV-val (interp e1 env funs)))]
     [(if0 con e1 e2) (if (interp con env funs) (interp e1 env funs) (interp e2 env funs))]
     [(add1 e1) (+ (interp e1 env funs) 1)]
-    [(with list body)     (let* ((syms (map first list))            (vals (map (lambda (e) (interp e env funs)) (map second list)))            (new-env (extend-env syms vals env)))       (interp body new-env funs))]
-    
-    [(app f arg-expr)
-     (def (fundef _ farg fbody) (lookup-fundef f funs))
-     (interp fbody
-             funs
-             (extend-env farg
-                         (interp arg-expr funs env)
-                         empty-env))]
 
+
+    [(with lista body)
+     (interp body
+             (foldr (λ (par env) (act par env funs)) env lista)
+             funs)]
+     
+
+    
+     ;(interp body funs (extend-env (map first lista) (map (lambda (e) (interp e env funs)) (map second lista)) env))]
+    [(app f val-lista)
+     (def (fundef _ param-list fbody) (lookup-fundef f funs))
+     (interp fbody
+             (foldr (λ (par1 par2 env) (extend-env-list par1 par2 env funs)) env val-lista)
+             funs)]
 
 
          
     ;[_ (error "not yet implemented")] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     ))
+;vamos a hacer un interprete auxiliar para el with 
+(define (act par env funs)
+  (extend-env (car par) (interp (car (cdr par)) env funs) env))
 
 
 
- 
+; vamos a hacer una funcion auxiliar para ir tomando el primer elemento de dos listas y que
+; con esto guardemos ese par en el env
+(define (extend-env-list list1 list2 env)
+  (cond
+    [(empty? list1) env]
+    [(empty? list2) env]
+    [else (extend-env-list (cdr list1) (cdr list2)
+                           (extend-env (car list1) (car list2) env))]))
+
+
+
 ;; lookup-fundef :: sym Listof(FunDef) -> FunDef
 (define (lookup-fundef f funs)
   (match funs
     ['() (error 'lookup-fundef "function not found: ~a" f)]
-    [(cons (and fd (fundef fn _ _)) rest)
+    [(cons (fundef fn args body) rest)
      (if (symbol=? fn f)
-         fd
+         (fundef fn args body)
          (lookup-fundef f rest))]))
+
 
 (define (run sp)
   (def (prog funs main) (parse sp))

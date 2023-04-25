@@ -16,6 +16,10 @@
 (define (sumatoria lista)
   (foldr + 0 lista));; foldr(recibe 2 argumentos) le entregamos una operacion, el valor inicial y los argumentos que queremos procesar
 
+(define (act par env)
+  (extend-env (car par) (interp (cdr par)) env))
+  
+
 (sumatoria lista-prueba)
 
 (define (doble lista)

@@ -1,7 +1,7 @@
 #lang play
 (require "p1.rkt")
 (print-only-errors #t)
-
+(require "env.rkt")
 
 
 
@@ -40,7 +40,7 @@
 
 ;test with con add
 (test (parse-expr '(with ((x 1) (y 2)) (+ x y)))
-      (with (list (list (id 'x) (num 1)) (list (id 'y) (num 2))) (add (id 'x) (id 'y))))
+      (with (list (list 'x (num 1)) (list 'y (num 2))) (add (id 'x) (id 'y))))
 
 ;test cons
 (test (parse-expr '(cons 1 2)) (cons0 (num 1) (num 2)))
@@ -55,7 +55,7 @@
 ;test integracion with, cons, snd, fst y app
 (test (parse-expr    '{with {{x 9} {y {cons 1 {cons 3 4}}}}
         {sum x {fst y} {snd y}} })
-      (with (list (list (id 'x) (num 9)) (list (id 'y) (cons0 (num 1) (cons0 (num 3) (num 4)))))
+      (with (list (list 'x (num 9)) (list 'y (cons0 (num 1) (cons0 (num 3) (num 4)))))
             (app 'sum (list (id 'x) (fst (id 'y)) (snd (id 'y))))))
 
 
@@ -66,7 +66,7 @@
 
 ; test conjunto with con cons
 (test (parse-expr '{with {{y 9}{x {cons 1 {cons 2 3}}}} x})
-      (with (list (list (id 'y) (num 9))(list (id 'x) (cons0 (num 1) (cons0 (num 2) (num 3))))) (id 'x)))
+      (with (list (list 'y (num 9))(list 'x (cons0 (num 1) (cons0 (num 2) (num 3))))) (id 'x)))
 
 ;test interp
 ;|
@@ -118,20 +118,58 @@
 (test (run '{#t}) (boolV #t))
 
 
+(define env11 '())
+(define funs11 '())
 
+(interp (with (list (list 'x (num 5)) (list 'z (add (num 11) (num -3)))) (id 'z))
+          empty-env
+          '())
 
-(test (run '{ ;; Programa de Ejemplo 2
-             {with {{x 5} {y 23} {z {cons 11 -3}}}
-                   z}
-             })
+(test (interp (with (list (list 'x (num 5)) (list 'z (cons0 (num 11) (num -3)))) (id 'z))
+        empty-env
+          '())
       (pairV (numV 11) (numV -3)))
+
+
+(test (interp (with (list (list 'x (num 5)) (list 'z (cons0 (num 11) (num -3)))) (snd (id 'z)))
+        empty-env
+          '())
+      (numV -3))
+
+(test (interp (with (list (list 'x (num 5)) (list 'z (cons0 (num 11) (num -3)))) (fst (id 'z)))
+        empty-env
+          '())
+      (numV 11))
+
+
+
+
+(test (interp (with (list (list 'x (num 5)) (list 'z (cons0 (num 5) (cons0 (add (num 2)(num 11)) (num -3))))) (id 'z))
+        empty-env
+          '())
+      (pairV (numV 5) (pairV (numV 13) (numV -3))))
+
+
+(test (interp (parse-expr '{with {{x 9} {y {cons 1 {cons 3 4}}}}
+             {+ {fst y} {snd {snd y}}}})
+              empty-env
+          '())
+      (numV 5))
+
+(run '{ ;; Programa de Ejemplo 1
+       {define {sum x y z} {+ x {+ y z}}}
+       {with {{x 9} {y {cons 1 {cons 3 4}}}}
+             {sum x {fst y} {snd y}} }
+       })
+
+
 #|
 
 
 (run '{ ;; Programa de Ejemplo 1
        {define {sum x y z} {+ x {+ y z}}}
        {with {{x 9} {y {cons 1 {cons 3 4}}}}
-             {sum x {fst y} {cadr y}} }
+             {sum x {fst y} {snd y}} }
        })
 
 
@@ -161,5 +199,12 @@
                    {if {= x y} x y}}
              })
       (numV 3))
+
+     [(app f arg-list)
+      (def (fundef _ farg fbody) (lookup-fundef f funs))
+      (interp fbody
+             (extend-env farg
+                         (map (λ (arg) (interp arg funs env)) arg-list)
+                         empty-env) funs)]
 
 |#
