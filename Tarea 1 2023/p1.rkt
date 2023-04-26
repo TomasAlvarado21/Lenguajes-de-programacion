@@ -121,7 +121,7 @@
     [(cons0 l r) (pairV (interp l env funs) (interp r env funs))]
     ;[(cons l r) (pairV (interp l env funs) (interp r env funs))]
     [(lt l r) (boolV (< (numV-val (interp l env funs)) (numV-val (interp r env funs))))]
-    [(eq e1 e2) (= (interp e1 env funs) (interp e2 env funs))]
+    [(eq e1 e2) (= (numV-val(interp e1 env funs)) (numV-val (interp e2 env funs)))]
     [(add e1 e2) (numV (+ (numV-val(interp e1 env funs)) (numV-val (interp e2 env funs))))]
     [(neq e1) (not (interp e1 env funs))]
     [(and0 e1 e2) (and (interp e1 env funs) (interp e2 env funs))]
@@ -138,15 +138,23 @@
              funs)]
      
 
-    
-     ;(interp body funs (extend-env (map first lista) (map (lambda (e) (interp e env funs)) (map second lista)) env))]
+    #|
+     ;(interp body funs fo(extend-env (map first lista) (map (lambda (e) (interp e env funs)) (map second lista)) env))]
     [(app f val-lista)
      (def (fundef _ param-list fbody) (lookup-fundef f funs))
+     (interp val-lista (extend-funenv param-list val-lista funs env empty-env) funs)]
+
+    [(app f arg-expr)
+     (def (fundef _ farg fbody) (lookup-fundef f funs))
      (interp fbody
-             (extend-env-list funs param-list env)
-             funs)]
-
-
+             (extend-env-fun farg arg-expr
+                         (interp arg-expr env funs)
+                         empty-env) funs)]
+|#
+     [(app f e) (def (fundef _ the-arg the-body) (look-up f f-list))
+                (def new-env (map (λ (the-arg f-list env) (extend-env-fun the-arg (interp e f-list env) funs f-list empty-env))))
+                ;(def new-env (extend-env the-arg (eval e f-list env) empty-env))
+                (interp the-body new-env f-list)]
          
     ;[_ (error "not yet implemented")] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     ))
@@ -156,12 +164,13 @@
 
 
 
-; vamos a hacer una funcion auxiliar para ir tomando el primer elemento de dos listas y que
-; con esto guardemos ese par en el env
-(define (extend-env-list list1 list2 env)
-  (extend-env-list (cdr list1) (cdr list2)
-                           (extend-env (car list1) (car (numV-val list2)) env)))
-
+; vamos a hacer una funcion auxiliar agregar elementos en el ambiente
+(define (extend-env-fun args-id expr fundefs main-env fun-env)
+  (if (equal? args-id '())
+      fun-env
+      (extend-env-fun (car args-id) (car expr) fundefs main-env
+                      (extend-env (car args-id) (interp (car expr) fundefs main-env)
+                                  fun-env))))
 
 
 ;; lookup-fundef :: sym Listof(FunDef) -> FunDef

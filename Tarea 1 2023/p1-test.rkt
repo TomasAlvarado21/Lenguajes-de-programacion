@@ -157,11 +157,22 @@
           '())
       (numV 5))
 
-(run '{ ;; Programa de Ejemplo 1
-       {define {sum x y z} {+ x {+ y z}}}
-       {with {{x 9} {y {cons 1 {cons 3 4}}}}
-             {sum x {fst y} {snd y}} }
-       })
+
+
+(test (run '{ ;; Programa de Ejemplo 4
+             {with {{x 3} {y {+ 1 2}}}
+                   {if {= x y} x y}}
+             })
+      (numV 3))
+
+
+(test (run '{ ;; Programa de Ejemplo 1
+             {define {sum x y z} {+ x {+ y z}}}
+             {define {cadr x} {fst {snd x}}}
+             {with {{x 9} {y {cons 1 {cons 3 4}}}}
+                   {sum x {fst y} {cadr y}} }
+             })
+      (numV 13))
 
 
 #|
