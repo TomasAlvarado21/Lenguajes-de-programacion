@@ -143,7 +143,7 @@
     [(app f val-lista)
      (def (fundef _ param-list fbody) (lookup-fundef f funs))
      (interp fbody
-             (foldr (λ (par1 par2 env) (extend-env-list par1 par2 env funs)) env val-lista)
+             (extend-env-list funs param-list env)
              funs)]
 
 
@@ -159,11 +159,8 @@
 ; vamos a hacer una funcion auxiliar para ir tomando el primer elemento de dos listas y que
 ; con esto guardemos ese par en el env
 (define (extend-env-list list1 list2 env)
-  (cond
-    [(empty? list1) env]
-    [(empty? list2) env]
-    [else (extend-env-list (cdr list1) (cdr list2)
-                           (extend-env (car list1) (car list2) env))]))
+  (extend-env-list (cdr list1) (cdr list2)
+                           (extend-env (car list1) (car (numV-val list2)) env)))
 
 
 

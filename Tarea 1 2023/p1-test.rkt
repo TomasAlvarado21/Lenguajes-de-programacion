@@ -97,19 +97,19 @@
 ;test interp con cons
 (define env6 '())
 (define funs6 '())
-(test (interp (cons (num 1) (num 2)) env6 funs6) (pairV (numV 1) (numV 2)))
+(test (interp (cons0 (num 1) (num 2)) env6 funs6) (pairV (numV 1) (numV 2)))
 
 
 
 
 
 
-(run '{ #t })
+(test (run '{ #t }) (boolV #t))
 ;; Salida esperada: boolV true
-(run '{ (+ 3 4) })
+(test (run '{ (+ 3 4) })(numV 7))
 ;; Salida esperada: numV 7
 
-(run '{ (< 3 5) })
+(test (run '{ (< 3 5) })(boolV #t))
 ;; Salida esperada: boolV true
 
 
@@ -121,9 +121,10 @@
 (define env11 '())
 (define funs11 '())
 
-(interp (with (list (list 'x (num 5)) (list 'z (add (num 11) (num -3)))) (id 'z))
+(test (interp (with (list (list 'x (num 5)) (list 'z (add (num 11) (num -3)))) (id 'z))
           empty-env
           '())
+      (numV 8))
 
 (test (interp (with (list (list 'x (num 5)) (list 'z (cons0 (num 11) (num -3)))) (id 'z))
         empty-env
