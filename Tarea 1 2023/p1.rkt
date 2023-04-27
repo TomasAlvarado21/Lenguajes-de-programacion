@@ -51,36 +51,47 @@
   (app f-name body)
   )
 
+
 ;; tipo inductivo para los valores del lenguaje
 (deftype Val
   (numV n)
   (boolV b)
-  (pairV lV rV)
-  (closureV id body env))
+  (pairV lV rV))
 
+;; numV-val :: numV → num
+;; esta funcion recibe un numV y devuelve un numero
 (define (numV-val val)
   (match val
     [(numV n) n]))
 
+;; pairV-val :: pairV → pair
+;; esta funcion recibe un pairV y devuelve un pair
 (define (pairV-val par)
   (match par
     [(pairV e1 e2) (cons e1 e2)]))
 
+;; boolV-bool :: boolV → bool
+;; esta funcion recibe un boolV y devuelve un bool
 (define (boolV-bool val)
   (match val
     [(boolV b) b]))
 
+;; pairV-list :: pairV → list
+;; esta funcion recibe un pairV y devuelve una lista
 (define (pairV-list val)
   (match val
     [(pairV l r) (list l r)]))
 
-;; parse :: ...
+;; parse :: s-expr → Prog
+;; esta funcion recibe una lista de s-expr y devuelve un Prog
 (define (parse sp)
   (match sp
     [(list ds ... e) (prog (map parse-fundef ds) (parse-expr e))] ;; ds es la lista de definiciones, e es la expresion principal
     ))
 
-;; parse-expr :: ...
+;; parse-expr :: s-expr → Expr
+;; esta funcion recibe una expresion y devuelve un Expr
+
 (define (parse-expr se)
   (match se
     [(? number?) (num se)]
@@ -104,7 +115,8 @@
     [_ (error "not yet implemented")]
     ))
 
-;; parse-fundef :: ...
+;; parse-fundef :: s-fundef → fundef
+;; esta funcion recibe una definicion de funcion y devuelve un fundef
 (define (parse-fundef sf)
   (match sf
     [(list 'define (list name arg ...) body) (fundef name arg (parse-expr body))]))
@@ -112,7 +124,8 @@
 
 
 
-;; interp :: Expr → Env → list Fundef → Val
+;; interp :: (Expr  Env  list Fundef) → Val
+;; esta funcion recibe una expresion, un entorno y una lista de funciones y devuelve un valor
 (define (interp e env funs)
   (match e
     [(num n) (numV n)]
@@ -136,44 +149,33 @@
      (interp body
              (foldr (λ (par env) (act par env funs)) env lista)
              funs)]
-     
-
-    #|
-     ;(interp body funs fo(extend-env (map first lista) (map (lambda (e) (interp e env funs)) (map second lista)) env))]
-    [(app f val-lista)
-     (def (fundef _ param-list fbody) (lookup-fundef f funs))
-     (interp val-lista (extend-funenv param-list val-lista funs env empty-env) funs)]
-
+     ;ahora para el app tenemos que hacer lo mismo que con el with
+     ; usamos el extend-env-list para extender el env con los argumentos
     [(app f arg-expr)
      (def (fundef _ farg fbody) (lookup-fundef f funs))
-     (interp fbody
-             (extend-env-fun farg arg-expr
-                         (interp arg-expr env funs)
-                         empty-env) funs)]
-|#
-     [(app f e) (def (fundef _ the-arg the-body) (look-up f f-list))
-                (def new-env (map (λ (the-arg f-list env) (extend-env-fun the-arg (interp e f-list env) funs f-list empty-env))))
-                ;(def new-env (extend-env the-arg (eval e f-list env) empty-env))
-                (interp the-body new-env f-list)]
+      (interp fbody (extend-env-list (map (λ (arg) (interp arg env funs)) arg-expr) farg env) funs)]
+    
+  
          
     ;[_ (error "not yet implemented")] ;; usar esto https://users.dcc.uchile.cl/~etanter/play-interps/Functions_with_Environments.html
     ))
+
+; extend-env :: sym Val Env → Env
 ;vamos a hacer un interprete auxiliar para el with 
 (define (act par env funs)
   (extend-env (car par) (interp (car (cdr par)) env funs) env))
 
-
-
-; vamos a hacer una funcion auxiliar agregar elementos en el ambiente
-(define (extend-env-fun args-id expr fundefs main-env fun-env)
-  (if (equal? args-id '())
-      fun-env
-      (extend-env-fun (car args-id) (car expr) fundefs main-env
-                      (extend-env (car args-id) (interp (car expr) fundefs main-env)
-                                  fun-env))))
+; extend-env-list :: Listof(sym) Listof(Val) Env → Env
+; hacemos un extend env para el app usando la misma idea que con el with
+; tenemos una lista con los argumentos y otra con los parametros y nos da el env
+(define (extend-env-list args params env)
+  (match args
+    ['() env]
+    [(cons arg rest) (extend-env-list rest (cdr params) (extend-env (car params) arg env))]))
 
 
 ;; lookup-fundef :: sym Listof(FunDef) -> FunDef
+;; busca una funcion en la lista de funciones
 (define (lookup-fundef f funs)
   (match funs
     ['() (error 'lookup-fundef "function not found: ~a" f)]
@@ -183,6 +185,8 @@
          (lookup-fundef f rest))]))
 
 
+;; run :: String → Val
+;; corre el programa
 (define (run sp)
   (def (prog funs main) (parse sp))
   (interp main empty-env funs))
