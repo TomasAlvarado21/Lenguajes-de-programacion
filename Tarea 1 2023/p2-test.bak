@@ -49,10 +49,6 @@
                      {f {< 3 4}}}))
         (numT))
 
-
-
-;;;;;;; aqui empieza a fallar
-
 (test/exn (typecheck (parse '{{define {one {x : Num}} 1}
                        {one #t}}))
           "Static type error: expected Num found Bool")

@@ -157,23 +157,6 @@
           '())
       (numV 5))
 
-(run '{ ;; Programa de Ejemplo 1
-       {define {sum x y z} {+ x {+ y z}}}
-       {with {{x 9} {y {cons 1 {cons 3 4}}}}
-             {sum x {fst y} {snd y}} }
-       })
-
-
-#|
-
-
-(run '{ ;; Programa de Ejemplo 1
-       {define {sum x y z} {+ x {+ y z}}}
-       {with {{x 9} {y {cons 1 {cons 3 4}}}}
-             {sum x {fst y} {snd y}} }
-       })
-
-
 (test (run '{ ;; Programa de Ejemplo 1
              {define {sum x y z} {+ x {+ y z}}}
              {define {cadr x} {fst {snd x}}}
@@ -181,6 +164,8 @@
                    {sum x {fst y} {cadr y}} }
              })
       (numV 13))
+
+
 
 (test (run '{ ;; Programa de Ejemplo 2
              {with {{x 5} {y 23} {z {cons 11 -3}}}
@@ -200,12 +185,3 @@
                    {if {= x y} x y}}
              })
       (numV 3))
-
-     [(app f arg-list)
-      (def (fundef _ farg fbody) (lookup-fundef f funs))
-      (interp fbody
-             (extend-env farg
-                         (map (λ (arg) (interp arg funs env)) arg-list)
-                         empty-env) funs)]
-
-|#
