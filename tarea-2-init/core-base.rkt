@@ -54,11 +54,13 @@
          (interp t env)
          (interp f env))]
     [(id x) (env-lookup x env)]
-    [(printn e) 
-      (def (numV n) (interp e env))
-      (println n)
-      (numV n)]
-    [(app fun-expr arg-expr)
+    [(printn e)
+      (let ([n (interp e env)])
+        (println-g (numV-n n))
+        (result n (unbox log)))]
+    ;; hacemos la aplicación de funciones usando el box
+    ;; para poder modificar el log
+     [(app fun-expr arg-expr)
      (match (interp fun-expr env)
        [(closV id body fenv)
         (interp body
@@ -75,18 +77,33 @@
 ;; interp-top :: CL -> number
 ;; interpreta una expresión y retorna el valor final
 (define (interp-top expr)
-  (match (interp expr empty-env)
-    [(numV n) n]
-    [_ 'procedure]))
+  (match (interp-g expr)
+    [(result val _) val]))
+
     
 ;; run-cl :: s-expr -> number
 (define (run-cl prog)
   (interp-top (parse-cl prog)))
 
-;; tests
-(test (run-cl '{with {addn {fun {n}
-                          {fun {m}
-                            {+ n m}}}}
-                 {{addn 10} 4}})
-      14)
-;; ...
+;; Result :: (struct result (val log))
+;; val :: number
+(deftype Result 
+  (result val log))
+
+;; log :: (listof number)
+;; lista de números que se han impreso
+(define log (box '()))
+
+;; println-g :: number -> void
+;; imprime un número en la consola
+(define (println-g n)
+  (set-box! log (cons n (unbox log))))
+
+;; interp-g :: CL -> Result
+;; interpreta una expresión y retorna el valor final
+(define (interp-g expr)
+  (parameterize ([log (box '())])
+    (match (interp expr empty-env)
+      [(result val _) (result val (reverse (unbox log)))])))
+
+
