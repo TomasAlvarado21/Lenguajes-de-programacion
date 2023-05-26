@@ -1,10 +1,12 @@
 ;; test de core-base
 
 #lang play
-(require "core-base.rkt")
+(require "core.rkt")
 ;(print-only-errors #t)
 ;; tests
-(test (run-cl '{numV 5}) 5)
+
+(interp-p (parse-cl '{printn 10}) '())
+(interp-p (parse-cl '{printn {printn 10}}) '())
 
 (test (run-cl '{+ 2 3}) 5)
 

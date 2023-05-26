@@ -43,6 +43,7 @@
   (numV n)
   (closV id body env))
 
+
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
   (match expr
@@ -67,6 +68,8 @@
                             fenv))])]))
 
 
+  
+
 (define (num+ n1 n2)
   (numV (+ (numV-n n1) (numV-n n2))))
  
@@ -81,8 +84,9 @@
 
     
 ;; run-cl :: s-expr -> number
-(define (run-cl prog)
-  (interp-top (parse-cl prog)))
+;; interpreta una expresión y retorna el valor final
+(define (run-cl s-expr)
+  (interp-top (parse-cl s-expr)))
 
 ;; Result :: (struct result (val log))
 ;; val :: number
@@ -98,8 +102,10 @@
 (define (println-g n)
   (set-box! log (cons n (unbox log))))
 
-;; interp-g :: CL -> Result
+;; interp-p :: CL -> Result
 ;; interpreta una expresión y retorna el valor final
-(define (interp-g expr)
-  (let ([val (interp expr empty-env)])
-    (result val (unbox log))))
+(define (interp-p expr)
+  (parameterize ([log (box '())])
+    (match (interp expr empty-env)
+      [(result val _) (result val (reverse (unbox log)))])))
+

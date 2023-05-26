@@ -46,6 +46,7 @@
   (numV n)
   (closV id body env))
 
+(define param (make-parameter println))
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
   (match expr
@@ -59,7 +60,7 @@
     [(id x) (env-lookup x env)]
     [(printn e) 
       (def (numV n) (interp e env))
-      (println n)
+      ((param) n)
       (numV n)]
     [(app fun-expr arg-expr)
      (match (interp fun-expr env)
@@ -68,6 +69,11 @@
                 (extend-env id
                             (interp arg-expr env)
                             fenv))])]))
+
+
+;; Creación del parámetro para la función de impresión
+(define print-param (make-parameter println))
+
 
 (define (num+ n1 n2)
   (numV (+ (numV-n n1) (numV-n n2))))
@@ -84,47 +90,30 @@
     
 ;; run-cl :: s-expr -> number
 (define (run-cl prog)
-  (interp-top (parse-cl prog)))
+  (interp-p (parse-cl prog)))
 
-;; tests
-(test (run-cl '{with {addn {fun {n}
-                          {fun {m}
-                            {+ n m}}}}
-                 {{addn 10} 4}})
-      14)
-;; ...
+
 ;; Definición del nuevo tipo de dato Result
 (deftype Result 
   (result val log))
 
-;; Creación del parámetro para la función de impresión
-(define print-param (make-parameter println))
+
 
 ;; Función de impresión personalizada que registra las impresiones en el log
-(define (println-g value)
-  (let ([log (print-param)])
-    (set-box! log (cons value (unbox log))))
-  (print-param value))
+(define (println-g x)
+    (set-box! log (cons x (unbox log))))
 
-;; Modificación de la función interp para utilizar println-g en lugar de println
-(define (interp expr env)
-  (match expr
-    ;; Resto del código del intérprete
-    [(printn e)
-     (let ([val (interp e env)])
-       (println-g (numV-n val))
-       (result val (unbox log)))]))
+
 
 ;; Definición de la función interp-p que utiliza alcance dinámico y registra impresiones en un log local
 (define (interp-p expr env)
+  (define log (box '()))
   (parameterize ([print-param println-g])
-    (let ([log (box '())])
-      (let ([val (interp expr env)])
-        (result val (unbox log))))))
+    ((let ([val (interp expr env)])
+        (result val (unbox log)))))
+        
 
-;; Ejemplo de test para verificar la salida de las impresiones
-(define (test-printn)
-  (let ([expr '{+ 1 {printn {+ 1 2}}}])
-    (let ([result (interp-p (parse-cl expr) empty-env)])
-      (test (result-val result) 4)
-      (test (result-log result) '(3))))))
+; dame un test de println que use interp-p
+(test (interp-p (parse-cl '{printn 10}) empty-env)
+      (result (numV 10) (list 10)))
+      
