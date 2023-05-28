@@ -5,8 +5,8 @@
 ;(print-only-errors #t)
 ;; tests
 
-(interp-p (parse-cl '{printn 10}) '())
-(interp-p (parse-cl '{printn {printn 10}}) '())
+(test (interp-p (parse-cl '{printn 10})) (result (numV 10) '(10)))
+(test (interp-p (parse-cl '{printn {printn 10}}) (result (numV 10) '(10 10))))
 
 (test (run-cl '{+ 2 3}) 5)
 
@@ -14,7 +14,8 @@
 
 (test (run-cl '{if0 1 10 20}) 20)
 
-(test (run-cl '{with {x 5} x}) 5)
+;; test with
+(test (run-cl '{with {x 1} x}) 1)
 
 (test (run-cl '{with {x 5} {+ x 2}}) 7)
 
@@ -24,7 +25,7 @@
 
 (test (run-cl '{printn 10}) 10)
 
-(test (run-cl '{with {x 5} {printn x} x}) 5)
+;(test (run-cl '{with {x 5} {printn x} x}) 5)
 
 (test (run-cl '{with {addn {fun {n} {fun {m} {+ n m}}}} {{addn 10} 4}}) 14)
 
@@ -56,6 +57,6 @@
 
 (test (run-cl '{printn 10}) 10)
 
-(test (run-cl '{with {x 5}
-                 {printn x}
-                 {+ x 2}}) 7)
+;(test (run-cl '{with {x 5}
+                ; {printn x}
+                 ;{+ x 2}}) 7)

@@ -34,8 +34,8 @@
     [(list 'if0 c t f) (if0 (parse-cl c)
                             (parse-cl t)
                             (parse-cl f))]
-    [(list 'with (list (list x e) b))
-     (with x (parse-cl e) (parse-cl b))]
+    [(list 'with (list x e) b)
+     (app (fun x (parse-cl b)) (parse-cl e))]
     [(list 'fun (list x) b) (fun x (parse-cl b))]
     [(list 'printn e) (printn (parse-cl e))]
     [(list f a) (app (parse-cl f) (parse-cl a))]))
@@ -71,8 +71,7 @@
                             fenv))])]))
 
 
-;; Creación del parámetro para la función de impresión
-(define print-param (make-parameter println))
+
 
 
 (define (num+ n1 n2)
@@ -90,7 +89,7 @@
     
 ;; run-cl :: s-expr -> number
 (define (run-cl prog)
-  (interp-p (parse-cl prog)))
+  (interp-top (parse-cl prog)))
 
 
 ;; Definición del nuevo tipo de dato Result
@@ -100,20 +99,24 @@
 
 
 ;; Función de impresión personalizada que registra las impresiones en el log
-(define (println-g x)
+;; se tiene que guardar los valores en una caja para que no se pierdan, es la caja log local
+
+(define (interp-p expr)
+  (define log (box '()))
+
+  (define (println-g x)
     (set-box! log (cons x (unbox log))))
 
+  (parameterize ([param println-g])
+    (define val (interp expr empty-env))
+    (result val (unbox log))))
 
 
-;; Definición de la función interp-p que utiliza alcance dinámico y registra impresiones en un log local
-(define (interp-p expr env)
-  (define log (box '()))
-  (parameterize ([print-param println-g])
-    ((let ([val (interp expr env)])
-        (result val (unbox log)))))
         
 
 ; dame un test de println que use interp-p
-(test (interp-p (parse-cl '{printn 10}) empty-env)
+(test (interp-p (parse-cl '{printn 10}))
       (result (numV 10) (list 10)))
-      
+
+(test (interp-p (parse-cl '{printn {+ 1 2}}))
+      (result (numV 3) (list 3)))
