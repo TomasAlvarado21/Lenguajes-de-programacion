@@ -13,6 +13,7 @@
          | {<CL> <CL>}
          | {fun {<sym>} <CL>}
          | {printn <CL>}
+         | {mfun {<id>} <CL>}
 |#
 (deftype CL
   (num n)
@@ -22,7 +23,8 @@
   (id s)
   (app fun-expr arg-expr)
   (fun id body)
-  (printn e))
+  (printn e)
+  (mfun id body))
 
 
 ;; parse :: s-expr -> CL
@@ -38,13 +40,17 @@
      (app (fun x (parse-cl b)) (parse-cl e))]
     [(list 'fun (list x) b) (fun x (parse-cl b))]
     [(list 'printn e) (printn (parse-cl e))]
-    [(list f a) (app (parse-cl f) (parse-cl a))]))
+    [(list f a) (app (parse-cl f) (parse-cl a))]
+    [(list 'mfun (list x) b) (mfun x (parse-cl b))]))
 
 
 ;; values
 (deftype Val
   (numV n)
-  (closV id body env))
+  (closV id body env)
+  (mcolsV id body env))
+  
+(define my-table (make-hash))
 
 (define param (make-parameter println))
 ;; interp :: Expr Env -> Val
@@ -68,9 +74,16 @@
         (interp body
                 (extend-env id
                             (interp arg-expr env)
-                            fenv))])]))
-
-
+                            fenv))])]
+      ;; mfun y mcolsV, aqui se ocupa la tabla de hash, si no esta el id en la tabla se agrega
+      ;; si esta se imprime el valor de la tabla para no tener que calcularlo de nuevo
+      [(mfun id body) 
+        (if (hash-has-key? my-table id)
+            (hash-ref my-table id)
+            (begin
+              (def (mcolsV id body env) (mcolsV id body env))
+              (hash-set! my-table id (mcolsV id body env))
+              (hash-ref my-table id)))]))
 
 
 
@@ -120,3 +133,8 @@
 
 (test (interp-p (parse-cl '{printn {+ 1 2}}))
       (result (numV 3) (list 3)))
+
+
+;; dame el test de la función interp-p que use la función mfun con el ejemplo de arriba
+(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))
+      (result (numV 28) (list 10 4 10 4 28)))
