@@ -6,7 +6,9 @@
 ;; tests
 
 (test (interp-p (parse-cl '{printn 10})) (result (numV 10) '(10)))
-(test (interp-p (parse-cl '{printn {printn 10}}) (result (numV 10) '(10 10))))
+(test (interp-p (parse-cl '{printn {printn 10}})) (result (numV 10) '(10 10)))
+
+
 
 (test (run-cl '{+ 2 3}) 5)
 

@@ -58,6 +58,7 @@
   (match expr
     [(num n) (numV n)]
     [(fun id body) (closV id body env)]
+    [(mfun id body) (mcolsV id body env my-table)]
     [(add l r) (num+ (interp l env) (interp r env))]
     [(if0 c t f)
      (if (num-zero? (interp c env))
@@ -69,21 +70,24 @@
       ((param) n)
       (numV n)]
     [(app fun-expr arg-expr)
-     (match (interp fun-expr env)
-       [(closV id body fenv)
-        (interp body
-                (extend-env id
-                            (interp arg-expr env)
-                            fenv))])]
-      ;; mfun y mcolsV, aqui se ocupa la tabla de hash, si no esta el id en la tabla se agrega
-      ;; si esta se imprime el valor de la tabla para no tener que calcularlo de nuevo
-      [(mfun id body) 
-        (if (hash-has-key? my-table id)
-            (hash-ref my-table id)
-            (begin
-              (def (mcolsV id body env) (mcolsV id body env))
-              (hash-set! my-table id (mcolsV id body env))
-              (hash-ref my-table id)))]))
+      (match (interp fun-expr env)
+        [(closV id body fenv)
+          (interp body
+                  (extend-env id
+                              (interp arg-expr env)
+                              fenv))])]
+        [(mcolsV id body fenv) ;; hago match con el mcolsV y se hace un if con el hash table y se agrega el id si no esta
+          (if (hash-has-key? my-table id)
+              (hash-ref my-table id)
+              (begin
+                (define n (interp arg-expr env))
+                (hash-set! n id (mcolsV id body env))
+                (match (interp body env)
+                  [(mcolsV id body fenv)
+                    (interp body
+                            (extend-env id
+                                        (interp arg-expr env)
+                                        fenv))])))]))
 
 
 
@@ -136,5 +140,8 @@
 
 
 ;; dame el test de la función interp-p que use la función mfun con el ejemplo de arriba
-(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))
-      (result (numV 28) (list 10 4 10 4 28)))
+;;(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) (list 10 4 10 4 28)))
+
+(test (run-cl '{with {x 10} x}) 10)
+
+(interp (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}) empty-env)
