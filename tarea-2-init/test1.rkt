@@ -2,7 +2,7 @@
 
 #lang play
 (require "core.rkt")
-;(print-only-errors #t)
+(print-only-errors #f)
 ;; tests
 
 (test (interp-p (parse-cl '{printn 10})) (result (numV 10) '(10)))
@@ -27,7 +27,7 @@
 
 (test (run-cl '{printn 10}) 10)
 
-;(test (run-cl '{with {x 5} {printn x} x}) 5)
+(test (run-cl '{with {x 5} {printn x}}) 5)
 
 (test (run-cl '{with {addn {fun {n} {fun {m} {+ n m}}}} {{addn 10} 4}}) 14)
 
@@ -58,7 +58,3 @@
 (test (run-cl '{{fun {x} {+ x 1}} 5}) 6)
 
 (test (run-cl '{printn 10}) 10)
-
-;(test (run-cl '{with {x 5}
-                ; {printn x}
-                 ;{+ x 2}}) 7)

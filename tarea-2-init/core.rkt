@@ -43,14 +43,14 @@
     [(list f a) (app (parse-cl f) (parse-cl a))]
     [(list 'mfun (list x) b) (mfun x (parse-cl b))]))
 
+(define my-table (make-hash))
 
 ;; values
 (deftype Val
   (numV n)
   (closV id body env)
-  (mcolsV id body env))
+  (mcolsV id body my-table env))
   
-(define my-table (make-hash))
 
 (define param (make-parameter println))
 ;; interp :: Expr Env -> Val
@@ -58,7 +58,7 @@
   (match expr
     [(num n) (numV n)]
     [(fun id body) (closV id body env)]
-    [(mfun id body) (mcolsV id body env my-table)]
+    [(mfun id body) (mcolsV id body my-table env)]
     [(add l r) (num+ (interp l env) (interp r env))]
     [(if0 c t f)
      (if (num-zero? (interp c env))
@@ -70,24 +70,20 @@
       ((param) n)
       (numV n)]
     [(app fun-expr arg-expr)
+      (define val (interp arg-expr env))
       (match (interp fun-expr env)
         [(closV id body fenv)
           (interp body
                   (extend-env id
-                              (interp arg-expr env)
-                              fenv))])]
-        [(mcolsV id body fenv) ;; hago match con el mcolsV y se hace un if con el hash table y se agrega el id si no esta
+                              val
+                              fenv))]
+        [(mcolsV id body my-table fenv)
           (if (hash-has-key? my-table id)
               (hash-ref my-table id)
               (begin
-                (define n (interp arg-expr env))
-                (hash-set! n id (mcolsV id body env))
-                (match (interp body env)
-                  [(mcolsV id body fenv)
-                    (interp body
-                            (extend-env id
-                                        (interp arg-expr env)
-                                        fenv))])))]))
+                (hash-set! my-table id (interp body (extend-env id val fenv)))
+                (hash-ref my-table id)))])]))
+
 
 
 
@@ -142,6 +138,29 @@
 ;; dame el test de la función interp-p que use la función mfun con el ejemplo de arriba
 ;;(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) (list 10 4 10 4 28)))
 
+;; tests para probar los mcloV y el hash y que en efecto se guardan los valores
+(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) '(10)))
+(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) '()))
+
+
 (test (run-cl '{with {x 10} x}) 10)
 
-(interp (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}) empty-env)
+(test (interp-p (parse-cl '{printn 10})) (result (numV 10) '(10)))
+
+
+(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
+               {+ {{add 3} 4} {{add 3} 4}}})) (result (numV 14) '(7)))
+
+
+; este test no imprime el 7 e imprime el resultado guardado en el hash
+(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
+               {+ {{add 3} 4} {{add 3} 4}}})) (result (numV 14) '()))
+
+
+; otro test para probar que se guardan los valores en el hash pero que tenga dentro if
+(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
+               {if0 {+ {{add 3} 4} {{add 3} 4}} {printn 10} {printn 20}}})) (result (numV 20) '(20)))
+
+; ahora este test no imprime el 20 e imprime el resultado guardado en el hash
+(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
+               {if0 {+ {{add 3} 4} {{add 3} 4}} {printn 10} {printn 20}}})) (result (numV 20) '(20)))
