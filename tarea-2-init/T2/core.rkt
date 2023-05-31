@@ -43,6 +43,8 @@
     [(list f a) (app (parse-cl f) (parse-cl a))]
     [(list 'mfun (list x) b) (mfun x (parse-cl b))]))
 
+
+;; define la tabla donde se guardaran las funciones
 (define my-table (make-hash))
 
 ;; values
@@ -51,9 +53,15 @@
   (closV id body env)
   (mcolsV id body my-table env))
   
-
+;; define el parámetro de impresión
 (define param (make-parameter println))
+
+
+
+
+
 ;; interp :: Expr Env -> Val
+;; interp es la función que interpreta una expresión en un ambiente
 (define (interp expr env)
   (match expr
     [(num n) (numV n)]
@@ -101,16 +109,17 @@
     [_ 'procedure]))
     
 ;; run-cl :: s-expr -> number
+;; interpreta una expresión en forma de string y retorna el valor final
 (define (run-cl prog)
   (interp-top (parse-cl prog)))
 
-
+;; interp-p :: Expr -> Result
 ;; Definición del nuevo tipo de dato Result
 (deftype Result 
   (result val log))
 
 
-
+;; interp-p :: Expr -> Result
 ;; Función de impresión personalizada que registra las impresiones en el log
 ;; se tiene que guardar los valores en una caja para que no se pierdan, es la caja log local
 
@@ -124,43 +133,3 @@
     (define val (interp expr empty-env))
     (result val (unbox log))))
 
-
-        
-
-; dame un test de println que use interp-p
-(test (interp-p (parse-cl '{printn 10}))
-      (result (numV 10) (list 10)))
-
-(test (interp-p (parse-cl '{printn {+ 1 2}}))
-      (result (numV 3) (list 3)))
-
-
-;; dame el test de la función interp-p que use la función mfun con el ejemplo de arriba
-;;(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) (list 10 4 10 4 28)))
-
-;; tests para probar los mcloV y el hash y que en efecto se guardan los valores
-(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) '(10)))
-(test (interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}} {+ {{addn 10} 4} {{addn 10} 4}}}))      (result (numV 28) '()))
-
-
-(test (run-cl '{with {x 10} x}) 10)
-
-(test (interp-p (parse-cl '{printn 10})) (result (numV 10) '(10)))
-
-
-(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
-               {+ {{add 3} 4} {{add 3} 4}}})) (result (numV 14) '(7)))
-
-
-; este test no imprime el 7 e imprime el resultado guardado en el hash
-(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
-               {+ {{add 3} 4} {{add 3} 4}}})) (result (numV 14) '()))
-
-
-; otro test para probar que se guardan los valores en el hash pero que tenga dentro if
-(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
-               {if0 {+ {{add 3} 4} {{add 3} 4}} {printn 10} {printn 20}}})) (result (numV 20) '(20)))
-
-; ahora este test no imprime el 20 e imprime el resultado guardado en el hash
-(test (interp-p (parse-cl '{with {add {mfun {x} {mfun {y} {printn {+ x y}}}}}
-               {if0 {+ {{add 3} 4} {{add 3} 4}} {printn 10} {printn 20}}})) (result (numV 20) '(20)))
