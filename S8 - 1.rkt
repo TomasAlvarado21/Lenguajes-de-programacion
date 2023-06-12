@@ -179,76 +179,83 @@
 (test (run '{with {x z} 1}) 1) ; perezosa
 
 
-;; Apuntes de la clase Semana 8 - 2
-;; Estrategias de evaluacion:
-;; - Temprana
-;; Ejemplo:
-;; {f {+ 1 2}}
-;; {f 3}
+; Apuntes de la clase Semana 8 - 2
+; Estrategias de evaluacion:
+; - Temprana
+; Ejemplo:
+; {f {+ 1 2}}
+; {f 3}
 
-;; - Perezosa (lazy)
-;; Ejemplo:
-;; lazy val x = foo()
-;; la evaluacion perezosa no implica alcance dinamico
-;; se tienen que evaluar en algun momento las promesas, para ello se usa el strict
-
-
-;; Que es una funcion top level?
-;; es una funcion que no esta dentro de otra funcion (no es una funcion anidada)
+; - Perezosa (lazy)
+; Ejemplo:
+; lazy val x = foo()
+; la evaluacion perezosa no implica alcance dinamico
+; se tienen que evaluar en algun momento las promesas, para ello se usa el strict
 
 
-;; Puntos de Strictness
-;; 1. top level
-;; 2. primitivas
-;; 3. flujos de control (posicion de fun en app, condicional en if, while, etc) 
-
-;; call by name: evaluacion perezosa sin memoizacion (perezosa 1)
-;; esto es que si se evalua una expresion, se evalua cada vez que se la llama
-;; Sed search/replace
-
-;; call by need: evaluacion perezosa con memoizacion (perezosa 2)
-;; esto es que si se evalua una expresion, se guarda el resultado para no tener que volver a evaluarla
-;; esto es util para evitar loops infinitos o para evitar evaluar expresiones mas de una vez
-;; Haskell usa call by need (cachea los resultados de las funciones)
-
-;; call by value: evaluacion temprana
-;; esto es que si se evalua una expresion, se evalua una sola vez y se guarda el resultado
-;; esto es util para evitar loops infinitos o para evitar evaluar expresiones mas de una vez
-;; pero se evalua antes de la llamada a la funcion
+; Que es una funcion top level?
+; es una funcion que no esta dentro de otra funcion (no es una funcion anidada)
 
 
-;; Scala usa los 3 tipos de evaluacion
+; Puntos de Strictness
+; 1. top level: Las expresiones que no estan dentro de una funcion, es decir, las expresiones que se evaluan al principio
+; 2. primitivas: las primitivas de los lenguajes (ej: +, -, etc), los argumentos de las primitivas se evaluan antes de que la primitiva se evalúe
+; 3. flujos de control (posicion de fun en app, condicional en if, while, etc) 
 
-;; la ventaja de usar el call by name sobre el call by need es que el call by name no necesita
-;; memoria para guardar los resultados y evita loops infinitos
-
-;; para un def while(cond, body):
-;;    if cond:
-;;      body
-;;      while(cond, body)
-
-
-;; while(i < 10) (print(i) , i ++)
-;; para esta funcion en una evalicion call by value se evalua el cond solo una vez y se guarda en el caché,
-;; por lo que si el cond es True, se evalua el body pero se quedaria en un loop infinito y se imprimirá solo una vez
-
-;; en Scala el cond en vez de ser Bool es una funcion que devuelve un Bool(=> Bool) (call by name) 
-
-;; para la tarea 2 hay que hacer prints en el codigo, testear efectos de la evaluacion, haciendo los prints, pero sin
-;; necesariamente mostrarlos, osea guardarlos en una lista y mostrarlos al final, con scope dinamico
-
-;; cache: expr env <==> val (REFERENTIAL TRANSPARENCY) esto no se cumple siempre, si en programacion imperativa
-
-;; una funcion pura es una funcion que no tiene efectos secundarios, es decir, que no modifica el estado del programa
+; Los puntos de strictness son los lugares del programa donde se produce la evaluacion estricta de las expresiones.
+; La evaluacion estricta implica que todas las evaluaciones se evaluan completamente antes de que la expresion principal 
+; sea evaluada.
 
 
-;; en python se ocupa para memorizacion el @lru_cache(maxsize=None) (least recently used cache)
-;; lo cual es una funcion que recibe una funcion y devuelve una funcion, que es la misma funcion pero con memoizacion,
-;; solo sirve para funciones puras, no para funciones con efectos secundarios
+; call by name: evaluacion perezosa sin memoizacion (perezosa 1)
+; esto es que si se evalua una expresion, se evalua cada vez que se la llama
+; Sed search/replace
+
+; call by need: evaluacion perezosa con memoizacion (perezosa 2)
+; esto es que si se evalua una expresion, se guarda el resultado para no tener que volver a evaluarla
+; esto es util para evitar loops infinitos o para evitar evaluar x xexpresiones mas de una vez
+; Haskell usa call by need (cachea los resultados de las funciones)
+
+; call by value: evaluacion temprana
+; esto es que si se evalua una expresion, se evalua una sola vez y se guarda el resultado
+; esto es util para evitar loops infinitos o para evitar evaluar expresiones mas de una vez
+; pero se evalua antes de la llamada a la funcion
+
+
+; Scala usa los 3 tipos de evaluacion
+
+; la ventaja de usar el call by name sobre el call by need es que el call by name no necesita
+; memoria para guardar los resultados y evita loops infinitos
+
+; para un def while(cond, body):
+;    if cond:
+;      body
+;      while(cond, body)
+
+
+; while(i < 10) (print(i) , i ++)
+; para esta funcion en una evalicion call by value se evalua el cond solo una vez y se guarda en el caché,
+; por lo que si el cond es True, se evalua el body pero se quedaria en un loop infinito y se imprimirá solo una vez
+
+; en Scala el cond en vez de ser Bool es una funcion que devuelve un Bool(=> Bool) (call by name) 
+
+; para la tarea 2 hay que hacer prints en el codigo, testear efectos de la evaluacion, haciendo los prints, pero sin
+; necesariamente mostrarlos, osea guardarlos en una lista y mostrarlos al final, con scope dinamico
+
+; cache: expr env <==> val (REFERENTIAL TRANSPARENCY) esto no se cumple siempre, si en programacion imperativa
+
+; una funcion pura es una funcion que no tiene efectos secundarios, es decir, que no modifica el estado del programa
+
+
+; en python se ocupa para memorizacion el @lru_cache(maxsize=None) (least recently used cache)
+; lo cual es una funcion que recibe una funcion y devuelve una funcion, que es la misma funcion pero con memoizacion,
+; solo sirve para funciones puras, no para funciones con efectos secundarios
 
 ;; vamos a modificar el lenguaje para que acepte evaluacion perezosa (call by need)
 
 ; strict nos muestra como es que se esta evaluando el programa
+
+
 (define (strict v)
   (match v
     [(exprV expr env cache) 
@@ -264,3 +271,7 @@
 (define (set-cache v cache)
   (match cache
     [(exprV expr env) (exprV expr env (box v))]))
+
+
+; Mutacion: es la modificacion del estado del programa (cambiar el valor de una variable, etc)
+; 
