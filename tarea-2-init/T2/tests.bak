@@ -98,10 +98,6 @@
                            {+ {{add 5} 7} {{add 3} 2}}}))
       (result (numV 24) '()))
 
-(interp-p (parse-cl '{with {addn {mfun {n} {mfun {m} {+ {printn n} m}}}}
-                        {+ {{addn 10} 4} {{addn 10} 4}}}))
-
-
-
-(interp-p (parse-cl '{with {f {mfun {x} {+ {printn x} 1}}}
-                    {+ {f 1} {f 1}}}))
+(interp-p (parse-cl '{with {doble {mfun {x} {printn {+ x x}}}}
+                                 {+ {doble 3}
+                                    {doble 3}}}))

@@ -111,3 +111,27 @@
 ;                                  SUS TESTS                                  ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+; ejemplo parser
+(parse '{with {{x 5} {y 3}}
+          {begin {+ x 1}
+               {+ x y}}})
+(parse '{- 2 1})
+(parse '{= {+ 2 1} {- 4 1}})
+(parse '{and #t #f})
+(parse '{or #t #f})
+(parse '{not {not #t}})
+(parse '{if {not #f} {+ 2 1} 4})
+(parse '{< 1 2})
+(parse '{* 2 3})
+; parse con las clases de ejemplo
+(parse '{with {{c {class {x y}
+                        {def init {}
+                          {begin {set x 1} {set y 2}}}
+                        {def init {init-x init-y}
+                          {begin {set x init-x} {set y init-y}}}  
+                        {def sum {z} {+ {get self x} {+ {get self y} z}}}
+                        {def set-x {val} {set x val}}}}
+               {o {new c {3 4}}}}
+          {begin
+            {-> o set-x {+ 1 3}}
+            {+ {-> o sum 3} {get o y}}}})
