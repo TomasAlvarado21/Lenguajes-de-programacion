@@ -128,6 +128,12 @@ Este método no crea un nuevo ambiente.
   (match clase
     [(classV c) c]))
 
+;; classV-ids :: Class -> List<id>
+;; Retorna la lista de ids de la clase
+(define (classV-ids clase)
+  (match clase
+    [(classV c) c]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; parse :: s-expr -> Expr
@@ -194,27 +200,27 @@ Este método no crea un nuevo ambiente.
                      (extend-frame-env! (car in-def) (cdr in-def) new-env)
                      #t)) defs)       
        (interp body new-env))]
-    ; [(class ids methods) (classV ids methods)]
-    ; [(list 'new e exprs ...) ; Utilizar la sintaxis (list 'new e exprs ...) para el patrón
-    ;  (let* ([class (interp (parse e) env)]
-    ;         [class-env (classV-env class)]
-    ;         [object-env (make-hash (map cons (classV-ids class) (map (λ (x) (interp x env)) exprs)))])
-    ;    (set-aEnv-env! class-env object-env)
-    ;    (objectV class object-env))]
-    ; [(get e id)
-    ;  (let* ([object (interp e env)]
-    ;         [object-env (objectV-env object)])
-    ;    (env-lookup id object-env))]
-    ; [(set id e)
-    ;  (let* ([object (env-lookup 'self env)]
-    ;         [object-env (objectV-env object)])
-    ;    (hash-set! object-env id (interp e env))
-    ;    voidV)]
-    ; [(list '-> e id exprs ...) ; Utilizar la sintaxis (list '-> e id exprs ...) para el patrón
-    ;  (let* ([object (interp (parse e) env)]
-    ;         [object-env (objectV-env object)]
-    ;         [method (env-lookup id object-env)])
-    ;    (apply method object (map (λ (x) (interp x env)) exprs)))]
+    [(class ids methods) (classV ids methods)]
+    [(list 'new e exprs ...) ; Utilizar la sintaxis (list 'new e exprs ...) para el patrón
+     (let* ([class (interp (parse e) env)]
+            [class-env (classV-env class)]
+            [object-env (make-hash (map cons (classV-ids class) (map (λ (x) (interp x env)) exprs)))])
+       (set-aEnv-env! class-env object-env)
+       (objectV class object-env))]
+    [(get e id)
+     (let* ([object (interp e env)]
+            [object-env (objectV-env object)])
+       (env-lookup id object-env))]
+    [(set id e)
+     (let* ([object (env-lookup 'self env)]
+            [object-env (objectV-env object)])
+       (hash-set! object-env id (interp e env))
+       voidV)]
+    [(list '-> e id exprs ...) ; Utilizar la sintaxis (list '-> e id exprs ...) para el patrón
+     (let* ([object (interp (parse e) env)]
+            [object-env (objectV-env object)]
+            [method (env-lookup id object-env)])
+       (apply method object (map (λ (x) (interp x env)) exprs)))]
 
     [_ (error "not yet implemented")]))
 
@@ -224,9 +230,9 @@ Este método no crea un nuevo ambiente.
   (match v
     [(numV n) n]
     [(boolV b) b]
-    ;[(voidV) (void)]    
-    ;[(classV ids methods) (error "class value")]
-    ;[(objectV env) (error "constructor not found exception")]
+    [(voidV void) void]
+    [(classV _) (error "class value")]
+    [(objectV env) (error "constructor not found exception")]
     [_ (error "not yet implemented")]
     ))
 
