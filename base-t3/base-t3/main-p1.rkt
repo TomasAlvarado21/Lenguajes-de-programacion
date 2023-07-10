@@ -153,13 +153,14 @@ Este método no crea un nuevo ambiente.
                              (parse f))]
     [(list 'begin e1 e2) (begn (parse e1) (parse e2))]  
 
-    [(list 'with (list e ...)  b) (with (map parse-def e) (parse b))]
+    [(list 'with (list e ...)  b)
+     (with (map parse-def e) (parse b))]
 
-    [(list 'class ids (list methods ...)) (class ids (map parse-meth methods))]
+    [(list 'class ids methods ...) (class ids (map parse-meth methods))]
 
     [(list 'new e) (new (parse e) empty-env)]
 
-    [(list 'new e exprs ...) (new (parse e) (map parse exprs))]
+    [(list 'new e exprs) (new (parse e) (map parse exprs))]
 
     [(list 'get e id) (get (parse e) id)]
 
@@ -167,7 +168,6 @@ Este método no crea un nuevo ambiente.
 
     [(list '-> e id exprs ...) (-> (parse e) id (map parse exprs))]
 
-    [(list 'self) self]
     [_ (error "not yet implemented")]))
 
 
@@ -224,46 +224,53 @@ Este método no crea un nuevo ambiente.
     ;; parte que tengo que modificar yo
     ;; aqui vere los errores:
 [(class ids metodos)
-     (let ([mt (getMeth metodos '())]))
-       (let ([camposh (make-hash)])
-         (for-each (λ (i) (hash-set! camposh i (null))) ids)
-         (letrec ([class
+     (def mt (getMeth metodos '()))
+     (def camposh (make-hash))
+     (for ([i ids]) (hash-set! camposh i (null)))
+     (let ([m mt])
+       (letrec ([class
                     (λ (msg . arg)
                       (match msg
                         ['-crear
-                         (let ([objeto (objV class camposh mt)]))
-                           (let ([construct (findf (λ (x)
-                                                    (and (equal? 'init (first x))
-                                                         (equal? (length (second x)) (length (car arg))))))
-                                                  mt]))]
-                             (if construct
-                                 (let ([argc (second construct)] [body (third construct)])
-                                   (let ([newenvi (multi-extend-env argc (car arg) env)])
-                                     (extend-frame-env! 'self objeto newenvi)
-                                     (interp body newenvi)
-                                     objeto))
-                                 (if (empty? (car arg))
-                                     objeto
-                                     (error "error: constructor not found")))))
+                         (def objeto (objV class camposh m))
+                         (def construct (findf (lambda (x)
+                                                 (and (equal? 'init (first x))(equal? (length (second x)) (length (car arg)))))
+                                               m))
+                         (if construct
+                             (let ([argc (second construct)] [body (third construct)])
+                               (begin
+                                 (def newenvi (multi-extend-env argc (car arg) env))
+                                 (extend-frame-env! 'self objeto newenvi)
+                                 (interp body newenvi)
+                                 objeto))
+                             (if (empty? (car arg))
+                                 objeto
+                                 (error "error: constructor not found")))]
                         ['-get
-                         (let ([v (dict-ref (objV-campos (first arg)) (second arg) #f)])
-                           (if v
-                               v
-                               (error 'get "field not found ~a" (second arg))))]
+                         (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
+                         (if v
+                             v
+                             (error 'get "field not found ~a" (second arg)))]
                         ['-set
-                         (let ([v (dict-ref (objV-campos (first arg)) (second arg) #f)])
-                           (if v
-                               (dict-set! (objV-campos (first arg)) (second arg) (third arg))
-                               (error 'set "field not found ~a" (second arg))))]
+                         (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
+                         (if v
+                             (dict-set! (objV-fields (first arg)) (second arg) (third arg))
+                             (error 'set "field not found ~a" (second arg)))]
                         ['-invoke
-                         (let ([meto (findf (λ (x) (equal? (car x) (second arg))) mt)])
-                           (if meto
-                               (let ([argmeto (second meto)] [bodyy (third meto)])
-                                 (let ([new-env (multi-extend-env argmeto (third arg) env)])
-                                   (extend-frame-env! 'self (car arg) new-env)
-                                   (interp bodyy new-env)))
-                               (error '->: "method not found: ~a" (second arg))))]]
-           class)))]
+                         (def meto
+                           (findf (lambda (x)
+                                    (equal? (car x) (second arg)))
+                                  m))
+                         (if meto
+                             (let ([argmeto (second meto)] [bodyy (third meto)])
+                               (begin
+                                 (def new-env (multi-extend-env argmeto (third arg) env))
+                                 (extend-frame-env! 'self (car arg) new-env)
+                                 (interp bodyy new-env)))
+                             (error '->: "method not found: ~a" (second arg)))]))])
+                             class))]
+
+
     [(new clase args)
      (let ([class (interp clase env)])
        (if (val-class? class)
@@ -292,7 +299,7 @@ Este método no crea un nuevo ambiente.
     [(-> clase idm args)
      (let ([obj (interp clase env)])
        (if (val-obj? obj)
-            (let ([clase (objV-clase obj)])
+            (let ([clase (objV-clase obj)])	
               (if (class '-invoke)
                   ((class '-invoke) obj idm (map (λ (x) (interp x env)) args))
                   (error "->: method not found")))
@@ -300,16 +307,15 @@ Este método no crea un nuevo ambiente.
 
 ;; getMeth :: List<Def> -> Env -> Env
 ;; funcion que retorna un env con los metodos de la clase
+;; si el metodo esta repetido, tira error "same arity constructor exception"
 (define (getMeth metodos l)
-  (cond
-    [(empty? metodos) l]
-    [(match (car metodos)
-       [(defm 'init argum cuerpo)
-        (if (findf (lambda (x) (and (equal? 'init (first x)) (equal? (length (second x)) (length argum)))))
-            (error "error: same arity constructor error")
-            (getMeth (cdr metodos) (cons (list 'init argum cuerpo) l)))]
-       [(defm idm argum cuerpo) (getMeth (cdr metodos) (cons (list idm argum cuerpo) l))])]
-  ))
+  (if (empty? metodos)
+      l
+      (let ([met (first metodos)])
+        (if (member (first met) l)
+            (error "same arity constructor exception")
+            (getMeth (rest metodos) (cons (first met) l))))))
+
 
 ;; val-obj? :: Val -> Boolean
 ;; funcion que retorna true si el valor es un objeto
@@ -318,7 +324,19 @@ Este método no crea un nuevo ambiente.
     [(objV clase campos metodos) #t]
     [else #f]))    
 
-  
+;; objV-clase :: Val -> Val
+;; funcion que retorna la clase de un objeto
+(define (objV-clase v)
+  (match v
+    [(objV clase campos metodos) clase]))
+
+;; val-class? :: Val -> Boolean
+;; funcion que retorna true si el valor es una clase
+(define (val-class? v)
+  (match v
+    [(classV ids) #t]
+    [else #f]))
+
 
 ;; open-val :: Val -> Scheme Value
 ;; Extrae el valor de un Val
@@ -358,3 +376,11 @@ valores de MiniScheme para clases y objetos
     [(numV n) n]
     [(boolV b) b]
     [x x]))
+
+
+;; Tests
+;; dame un ejemplo parser que funcione de clases
+#;
+(run-val '{with {{A {class {}}}
+                   {o {new A {}}}}
+              {-> o m}})
