@@ -124,7 +124,7 @@
 (parse '{< 1 2})
 (parse '{* 2 3})
 ; parse con las clases de ejemplo
-(parse '{with {{c {class {x y}
+(run-val '{with {{c {class {x y}
                         {def init {}
                           {begin {set x 1} {set y 2}}}
                         {def init {init-x init-y}
