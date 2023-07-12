@@ -67,11 +67,11 @@
          11)
 
 ;; No se puede usar set fuera de un método
-#; (test/exn (run-val '{set x 1})
+ (test/exn (run-val '{set x 1})
              "error: set outside method exception")
 
 ;; No se puede usar self fuera de un método
-#; (test/exn (run-val 'self)
+(test/exn (run-val 'self)
              "error: self outside method exception")
 
 ;; Acceder a un campo no definido de una clase
@@ -87,20 +87,20 @@
              "error: field not initialized exception")
 
 ;; Invocar un método no definido de una clase
-#; (test/exn (run-val '{with {{A {class {}}}
+ (test/exn (run-val '{with {{A {class {}}}
                    {o {new A {}}}}
               {-> o m}})
              "error: method not found exception")
 
 ;; Una clase sin constructores puede ser creado solo con {new class}, sin argumentos
-#; (test/exn (run-val '{with {{x 10}
+ (test/exn (run-val '{with {{x 10}
                    {A {class {x}}}
                    {o {new A {x}}}}
               1})
              "error: constructor not found exception")
 
 ;; Tener 2 init con la misma aridad es un error en tiempo de creación de la clase
-#; (test/exn (run-val '{begin {with {{A {class {x}
+ (test/exn (run-val '{begin {with {{A {class {x}
                                {def init {init-x} {set x init-x}}
                                {def init {init-x} {set x 12}}}}}
                      10}

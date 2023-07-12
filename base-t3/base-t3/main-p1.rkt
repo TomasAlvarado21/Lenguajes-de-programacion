@@ -91,7 +91,8 @@ Busca un símbolo en el ambiente, retornando su valor asociado.
 |#
 (define (env-lookup x env)
   (match env
-    [(mtEnv) (error 'env-lookup "free identifier: ~a" x)]
+    [(mtEnv)
+        (error (format "error: ~a outside method exception" x))]
     [(aEnv hash rest)
      (if (hash-has-key? hash x)
          (hash-ref hash x)
@@ -224,52 +225,52 @@ Este método no crea un nuevo ambiente.
        (interp body new-env))]
     ;; parte que tengo que modificar yo
     ;; aqui vere los errores:
-    [(class ids metodos)
-     (def mt (getMet metodos '()))
-     (def fieldHash (make-hash))
-     (for ([i ids]) (hash-set! fieldHash i (null)))
-     (let ([m mt])
-       (letrec ([class
-                    (λ (msg . arg)
-                      (match msg
-                        ['-crear
-                         (def objeto (objV class fieldHash m))
-                         (def construct (findf (lambda (x)
-                                                 (and (equal? 'init (first x))(equal? (length (second x)) (length (car arg)))))
-                                               m))
-                         (if construct
-                             (let ([argc (second construct)] [body (third construct)])
-                               (begin
-                                 (def newenvi (multi-extend-env argc (car arg) env))
-                                 (extend-frame-env! 'self objeto newenvi)
-                                 (interp body newenvi)
-                                 objeto))
-                             (if (empty? (car arg))
-                                 objeto
-                                 (error "error: constructor not found")))]
-                        ['-get
-                         (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
-                         (if v
-                             v
-                             (error 'get "error: field not found exception"))]
-                        ['-set
-                         (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
-                         (if v
-                             (dict-set! (objV-fields (first arg)) (second arg) (third arg))
-                             (error 'set "error: field not found exception"))]
-                        ['-invoke
-                         (def meto
-                           (findf (lambda (x)
-                                    (equal? (car x) (second arg)))
-                                  m))
-                         (if meto
-                             (let ([argmeto (second meto)] [bodyy (third meto)])
-                               (begin
-                                 (def new-env (multi-extend-env argmeto (third arg) env))
-                                 (extend-frame-env! 'self (car arg) new-env)
-                                 (interp bodyy new-env)))
-                             (error '->: "method not found:"))]))])
-                             class))]
+     [(class ids metodos)
+     (def m (getMet metodos '()))
+     (def camposh (make-hash))
+     (for ([i ids]) (hash-set! camposh i (null)))
+      (letrec ([class
+                  (λ (msg . arg)
+                    (match msg
+                      ['-crear
+                        (def objeto (objV class camposh m))
+                        (def construct (findf (lambda (x)
+                                                (and (equal? 'init (first x))(equal? (length (second x)) (length (car arg)))))
+                                              m))
+                        (if construct
+                            (let ([argc (second construct)] [body (third construct)])
+                              (begin
+                                (def newenvi (multi-extend-env argc (car arg) env))
+                                (extend-frame-env! 'self objeto newenvi)
+                                (interp body newenvi)
+                                objeto))
+                            (if (empty? (car arg))
+                                objeto
+                                (error "error: constructor not found exception")))]
+                      ['-get
+                        (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
+                        (if v
+                            v
+                            (error "error: field not found exception" (second arg)))]
+                      ['-set
+                        (def v (dict-ref (objV-fields (first arg)) (second arg) #f))
+                        (if v
+                            (dict-set! (objV-fields (first arg)) (second arg) (third arg))
+                            (error "error: field not found exception" (second arg)))]
+                      ['-invoke
+                        (def meto
+                          (findf (lambda (x)
+                                  (equal? (car x) (second arg)))
+                                m))
+                        (if meto
+                            (let ([argmeto (second meto)] [bodyy (third meto)])
+                              (begin
+                                (def new-env (multi-extend-env argmeto (third arg) env))
+                                (extend-frame-env! 'self (car arg) new-env)
+                                (interp bodyy new-env)))
+                            (error "error: method not found exception"))]))])
+                            class)]
+      
     [(new clase args) ((interp clase env) '-crear (map (lambda (x) (interp x env)) args))]
     [(set id arg) (def obj (interp (self) env))
                   ((objV-classes obj) '-set obj id (interp arg env))]
@@ -279,6 +280,15 @@ Este método no crea un nuevo ambiente.
                          ((objV-classes obj) '-invoke obj idm (map (lambda (x) (interp x env)) args))]
   ))
 
+;; separate-members :: List<Def> List<Def> List<Def> -> List<Def> List<Def>
+;; funcion que separa los metodos de los fields
+(define (separate-members members flds methods)
+  (if (empty? members)
+      (list flds methods)
+      (match (car members)
+        [(my-def idm body) (separate-members (cdr members) flds (cons (my-def idm body) methods))]
+        [(my-met idm argum body) (separate-members (cdr members) (cons (my-def idm body) flds) methods)]
+        )))
 
 ;; getMet :: List<Def> -> Env -> Env
 ;; funcion que retorna un env con los metodos de la clase
@@ -290,7 +300,7 @@ Este método no crea un nuevo ambiente.
     [(my-met 'init argum cuerpo)
      (def flag (findf (lambda (x) (and (equal? 'init (first x)) (equal? (length (second x)) (length argum)))) l))
      (if flag
-         (error "error: same arity constructor error")
+         (error "error: same arity constructor exception")
          (getMet (cdr metodos) (cons (list 'init argum cuerpo) l)))
      ]
     [(my-met idm argum cuerpo) (getMet (cdr metodos) (cons (list idm argum cuerpo) l))]
@@ -365,6 +375,7 @@ valores de MiniScheme para clases y objetos
   (match val
     [(numV n) n]
     [(boolV b) b]
+    [(null)(error "error: field not initialized exception")]
     [x x]))
 
 
