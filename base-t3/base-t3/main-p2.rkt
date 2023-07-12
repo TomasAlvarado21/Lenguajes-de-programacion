@@ -37,7 +37,8 @@ RECUERDEN INCLUIR SU CODIGO DE LA P1
          | {class [: <expr>] {<id>*} <method>*} 
          | {super <id> <expr>*}
 |#
-
+(deftype method
+  (def id args body))
 
 (deftype Expr
   (num n)
@@ -48,7 +49,12 @@ RECUERDEN INCLUIR SU CODIGO DE LA P1
   (my-if c tb fb)  
   (begn expr1 expr2)  
   (with defs body)
-  ; ...
+  (class super classes methods)
+  (new class args)
+  (get obj field)
+  (set field val)
+  (-> obj method args)
+  (self)
   )
 
 (deftype Def ;; Used inside with
@@ -58,8 +64,10 @@ RECUERDEN INCLUIR SU CODIGO DE LA P1
 (deftype Val
   (numV n)
   (boolV b)
-  ; ...
+  (objectV clase super fields methods)
   )
+
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -136,17 +144,58 @@ Este método no crea un nuevo ambiente.
     [(list 'if c t f) (my-if (parse c)
                              (parse t)
                              (parse f))]
-    [(list 'begin e1 e2) (begn (parse e1) (parse e2))]    
+    [(list 'begin e1 e2) (begn (parse e1) (parse e2))]  
+
     [(list 'with (list e ...)  b)
      (with (map parse-def e) (parse b))]
-    ; ...
+
+    [(list 'class ': super ids metodos ...) 
+      (class (parse super) ids (map parse-meth metodos))]
+    [(list 'class ids metodos ...) (class ids 'super (map parse-meth metodos))]
+
+    [(list 'super id exprs ...) (super id (map parse exprs))]
+    
+
+    [(list 'class ids methods ...) (class ids (map parse-meth methods))]
+
+    [(list 'new e) (new (parse e) empty-env)]
+
+    [(list 'new e exprs) (new (parse e) (map parse exprs))]
+
+    [(list 'get e id) (get (parse e) id)]
+
+    [(list 'set id e) (set id (parse e))]
+
+    [(list '-> e id exprs ...) (-> (parse e) id (map parse exprs))]
+
     [_ (error "not yet implemented")]))
+
+
+;; parse-meth :: s-expr -> Def
+;; funcion que parsea un metodo y retorna un Def
+(define (parse-meth s-expr)
+  (match s-expr
+    [(list 'def id (list ids ...) b) (my-def id (lambda (ids ...) (parse b)))]))
+
 
 
 ;; parse-def :: s-expr -> Def
 (define (parse-def s-expr)
   (match s-expr
     [(list id b) (my-def id (parse b))]))
+
+
+
+
+; tenemos que verificar estos errores:
+; La invocación de set fuera de un método debe lanzar el error “set outside method exception”.
+; La invocación de self fuera de un método debe lanzar el error “self outside method exception”.
+; El acceso a un campo inexistente de un objeto debe arrojar el error “field not found exception”.
+; El acceso a un campo no inicializado debe arrojar el error “field not initialized exception”.
+; La invocación de un método inexistente debe lanzar el error “method not found exception”.
+; La creación de un objeto con un número invalido de argumentos debe lanzar el error “constructor not found exception”.
+; Al crear una clase con 2 o más constructores de igual aridad, debe lanzar el error “same arity constructor exception”
+
 
 ;; interp :: Expr Env -> Val
 (define (interp expr env)
@@ -167,38 +216,123 @@ Este método no crea un nuevo ambiente.
                           (interp expr2 env))]
     [(with defs body)
      (let* ([new-env (multi-extend-env '() '() env)])
-       (for-each (λ(x)
+       (for-each (λ (x)
                    (let ([in-def (interp-def x new-env)])
                      (extend-frame-env! (car in-def) (cdr in-def) new-env)
                      #t)) defs)       
        (interp body new-env))]
-    ; ...
-    [_ (error "not yet implemented")]))
+    ;; parte que tengo que modificar yo
+    ;; aqui vere los errores:
+    [(class ids methods)
+     (let ([new-env (multi-extend-env '() '() env)])
+       (for-each (λ (x)
+                   (let ([in-def (interp-def x new-env)])
+                     (extend-frame-env! (car in-def) (cdr in-def) new-env)
+                     #t)) methods)
+       (classV (make-classV ids methods)))]
+
+
+    [(new clase super args)
+      (def super-aux 
+        (if (eq? super 'super)
+            'super)
+            ((interp super env) '-crear '()))
+     (let ([class (interp clase env)])
+       (if (val-class? class)
+           (let ([constructor class])
+             (if constructor
+                 (let ([args-interp (map (λ (x) (interp x env)) args)])
+                  class)
+                 (error "error: constructor not found")))
+           (error "new: class not found")))]
+    [(set id arg)
+     (let ([obj (interp (self) env)])
+       (if (val-obj? obj)
+           (let ([clase (objV-clase obj)])
+             (if (class '-set)
+                 ((class '-set) obj id (interp arg env))
+                 (error "set: field not found")))
+           (error "set: invalid object")))]
+    [(get clase id)
+     (let ([obj (interp clase env)])
+       (if (val-obj? obj)
+           (let ([clase (objV-clase obj)])
+             (if (class '-get)
+                 ((class '-get) obj id)
+                 (error "get: field not found")))
+           (error "get: invalid object")))]
+    [(-> clase idm args)
+     (let ([obj (interp clase env)])
+       (if (val-obj? obj)
+            (let ([clase (objV-clase obj)])	
+              (if (class '-invoke)
+                  ((class '-invoke) obj idm (map (λ (x) (interp x env)) args))
+                  (error "->: method not found")))
+           (error "->: invalid object")))]))
+
+;; getMeth :: List<Def> -> Env -> Env
+;; funcion que retorna un env con los metodos de la clase
+;; si el metodo esta repetido, tira error "same arity constructor exception"
+(define (getMeth metodos l)
+  (if (empty? metodos)
+      l
+      (let ([met (first metodos)])
+        (if (member (first met) l)
+            (error "same arity constructor exception")
+            (getMeth (rest metodos) (cons (first met) l))))))
+
+;; make-classV :: List<Id> List<Def> -> ClassV
+;; funcion que retorna un ClassV
+(define (make-classV ids metodos)
+  (classV (getMeth metodos '())))
+
+
+
+;; val-obj? :: Val -> Boolean
+;; funcion que retorna true si el valor es un objeto
+(define (val-obj? v)
+  (match v
+    [(objV clase campos metodos) #t]
+    [else #f]))    
+
+;; objV-clase :: Val -> Val
+;; funcion que retorna la clase de un objeto
+(define (objV-clase v)
+  (match v
+    [(objV clase campos metodos) clase]))
+
+;; val-class? :: Val -> Boolean
+;; funcion que retorna true si el valor es una clase
+(define (val-class? v)
+  (match v
+    [(classV ids) #t]
+    [else #f]))
+
 
 ;; open-val :: Val -> Scheme Value
+;; Extrae el valor de un Val
 (define (open-val v)
   (match v
     [(numV n) n]
     [(boolV b) b]
-    ; ...
-    [_ (error "not yet implemented")]
     ))
 
 ;; make-val :: Scheme Value -> Val
+;; Construye un Val a partir de un scheme value
 (define (make-val v)
   (match v
     [(? number?) (numV v)]
     [(? boolean?) (boolV v)]
-    ; ...
-    [_ (error "not yet implemented")]
     ))
 
 ;; interp-def :: Def, Env -> Expr
+;; Evalúa una definición y retorna un par con el id y el valor
 (define (interp-def a-def env)
   (match a-def
     [(my-def id body) (cons id (interp body env))]))
 
 ;; run :: s-expr -> Val
+;; Evalúa una expresión de MiniScheme y retorna un Val
 (define (run s-expr)
   (interp (parse s-expr) empty-env))
 

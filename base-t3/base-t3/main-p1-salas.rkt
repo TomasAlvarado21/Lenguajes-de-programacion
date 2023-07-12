@@ -242,7 +242,7 @@ Este método no crea un nuevo ambiente.
 
 
 
-
+;; getmetodos :: [Defm] -> [Defm] -> [Defm]
 (define (getmetodos metodos l)
   (if (empty? metodos)
       l
@@ -253,7 +253,10 @@ Este método no crea un nuevo ambiente.
          (error "error: same arity constructor error")
          (getmetodos (cdr metodos) (cons (list 'init argum cuerpo) l)))
      ]
-    [(defm idm argum cuerpo) (getmetodos (cdr metodos) (cons (list idm argum cuerpo) l))])))
+    [(defm idm argum cuerpo) (getmetodos (cdr metodos) (cons (list idm argum cuerpo) l))]
+    )))
+
+
 
 ;; open-val :: Val -> Scheme Value
 (define (open-val v)

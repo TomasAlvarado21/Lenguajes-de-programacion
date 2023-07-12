@@ -59,7 +59,7 @@
 
 ;; los identificadores dentro de una clase tienen scope léxico 
 ;; (note el uso de la “x” en la definición del método “m”
-#; (test (run-val '{with {{x 10}
+ (test (run-val '{with {{x 10}
                    {A {class {}
                         {def m {y} {+ x y}}}}
                    {o {new A {}}}}
@@ -75,13 +75,13 @@
              "error: self outside method exception")
 
 ;; Acceder a un campo no definido de una clase
-#; (test/exn (run-val '{with {{A {class {}}}
+ (test/exn (run-val '{with {{A {class {}}}
                    {o {new A {}}}}
               {get o m}})
              "error: field not found exception")
 
 ;; Acceder a un campo no inicializado de una clase
-#; (test/exn (run-val '{with {{A {class {x y} {def init {init-x init-y} {set x init-x}}}}
+ (test/exn (run-val '{with {{A {class {x y} {def init {init-x init-y} {set x init-x}}}}
                    {o {new A {1 2}}}}
               {get o y}})
              "error: field not initialized exception")
@@ -112,26 +112,26 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ; ejemplo parser
-(parse '{with {{x 5} {y 3}}
-          {begin {+ x 1}
-               {+ x y}}})
-(parse '{- 2 1})
-(parse '{= {+ 2 1} {- 4 1}})
-(parse '{and #t #f})
-(parse '{or #t #f})
-(parse '{not {not #t}})
-(parse '{if {not #f} {+ 2 1} 4})
-(parse '{< 1 2})
-(parse '{* 2 3})
+; (parse '{with {{x 5} {y 3}}
+;           {begin {+ x 1}
+;                {+ x y}}})
+; (parse '{- 2 1})
+; (parse '{= {+ 2 1} {- 4 1}})
+; (parse '{and #t #f})
+; (parse '{or #t #f})
+; (parse '{not {not #t}})
+; (parse '{if {not #f} {+ 2 1} 4})
+; (parse '{< 1 2})
+; (parse '{* 2 3})
 ; parse con las clases de ejemplo
 (run-val '{with {{c {class {x y}
-                        {def init {}
-                          {begin {set x 1} {set y 2}}}
-                        {def init {init-x init-y}
-                          {begin {set x init-x} {set y init-y}}}  
-                        {def sum {z} {+ {get self x} {+ {get self y} z}}}
-                        {def set-x {val} {set x val}}}}
-               {o {new c {3 4}}}}
-          {begin
-            {-> o set-x {+ 1 3}}
-            {+ {-> o sum 3} {get o y}}}})
+                      {def init {}
+                        {begin {set x 1} {set y 2}}}
+                      {def init {init-x init-y}
+                        {begin {set x init-x} {set y init-y}}}  
+                      {def sum {z} {+ {get self x} {+ {get self y} z}}}
+                      {def set-x {val} {set x val}}}}
+                 {o {new c {3 4}}}}
+                {begin
+                  {-> o set-x {+ 1 3}}
+                  {+ {-> o sum 3} {get o y}}}})
