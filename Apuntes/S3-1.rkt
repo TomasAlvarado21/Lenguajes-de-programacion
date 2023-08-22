@@ -1,0 +1,50 @@
+#lang play
+
+;; vamos a definir los arboles binarios, para esto tenemos que definir los nodos y las hojas
+
+#|
+    <BinTree> ::= (leaf <Value>)
+                | (node <BinTree> <BinTree>)
+|#
+
+(deftype BinTree
+    (leaf value)
+    (node value left right))
+
+;; constructores 
+(define my-tree
+    (node 1
+        (node 2
+            (leaf 3)
+            (leaf 4))
+        (node 5
+            (leaf 6)
+            (leaf 7))))
+
+;; destructores
+(node-value my-tree)
+(node-left my-tree)
+(node-right my-tree)
+
+;; vemos si son arboles binarios
+(BinTree? my-tree)
+(BinTree? 5)
+
+;; height ::= <BinTree> -> <int>
+;; devuelve la altura del arbol
+(define (height bt)
+    (match bt
+        [(leaf _) 0]
+        [(node _ left right)
+            (+ 1 (max (height left) (height right)))]))
+
+;; esta funcion solo puede recibir un bintree, esta garantiza que funciona bien para todas las entradas
+;; que sean BinTree
+
+;; max-bt :: BinTreeof Integer -> Integer
+;; devuelve el maximo de un arbol binario de enteros
+
+(define (max-bt bt)
+    (match bt
+    ((leaf v) v)
+    ()))
