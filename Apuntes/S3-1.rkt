@@ -1,4 +1,5 @@
 #lang play
+(print-only-errors #t)
 
 ;; vamos a definir los arboles binarios, para esto tenemos que definir los nodos y las hojas
 
@@ -47,4 +48,24 @@
 (define (max-bt bt)
     (match bt
     ((leaf v) v)
-    ()))
+    ((node v left right)
+        (max v (max (max-bt left) (max-bt right))))))
+
+;; test 
+(test (max-bt my-tree) 7)
+
+;; esquema de recursion general
+
+(define (foo bt)
+    (match bt
+        ((leaf v) (f v))
+        ((node v l r) (g v (foo l) (foo r)))))
+
+;; ahora vamos a hacer un fold para arboles binarios
+
+(define (fold-bt f g)
+    (lambda (bt)
+        (match bt
+            ((leaf v) (f v))
+            ((node v l r) (g v (fold-bt f g l) (fold-bt f g r))))))
+
