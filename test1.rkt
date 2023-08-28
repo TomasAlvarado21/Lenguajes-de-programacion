@@ -10,9 +10,9 @@
 
 ;; C) vars
 
-; (test (vars (varp "a")) ( list "a"))
-; (test (vars (andp (varp "a") (varp "b"))) (list "a" "b"))
-; (test (vars (andp (varp "a") (varp "a"))) (list "a"))
+(test (vars (varp "a")) ( list "a"))
+(test (vars (andp (varp "a") (varp "b"))) (list "a" "b"))
+(test (vars (andp (varp "a") (varp "a"))) (list "a"))
 
 ;; D) all-envs
 
@@ -30,7 +30,7 @@
 ;; E) eval
 (test (eval (varp "a") ( list (cons "a" #t))) #t)
 (test (eval (varp "a") ( list (cons "a" #f))) #f)
-(eval (varp "a") ( list ))
+(test/exn (eval (varp "a") ( list )) "eval: variable a is not defined in environment")
 
-(tautology? (orp (varp "a") (notp (varp "a"))))
-(tautology? (andp (varp "a") (notp (varp "a"))))
+(test (tautology? (orp (varp "a") (notp (varp "a")))) #t)
+(test (tautology? (andp (varp "a") (notp (varp "a")))) #f)

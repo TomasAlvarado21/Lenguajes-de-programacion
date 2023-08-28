@@ -34,14 +34,29 @@
 
 ;; vars :: Prop -> (Listof String)
 ;; funcion que devuelve una lista con todos los nombres de variables que ocurren en la proposicion
-;; no debe tener duplicados
-;; tiene que verificar que no haya duplicados antes de agregar a la lista
+;; no debe tener duplicados, usa la funcion inlist? para verificar si un string esta en una lista de strings
+;; antes de agregarlo a la lista de variables hay que ejecutar la parte izquierda y luego la derecha
 (define (vars Prop)
-    (match Prop
-        [(varp n) (list n)]
-        [(andp p q) (append (vars p) (vars q))]
-        [(orp p q) (append (vars p) (vars q))]
-        [(notp p) (vars p)]))
+  ;; creamos una lista vacia en la que vamos a ir agregando los nombres de las variables
+  (define vars-list '())
+  (match Prop
+    [(varp n) (if (inlist? n vars-list) vars-list (cons n vars-list))]
+    [(andp p q) 
+        (define left-vars (vars p))
+        (define right-vars (vars q))
+        (append left-vars (filter (lambda (x) (not (inlist? x left-vars))) right-vars))]
+    [(orp p q) 
+        (define left-vars (vars p))
+        (define right-vars (vars q))
+        (append left-vars (filter (lambda (x) (not (inlist? x left-vars))) right-vars))]
+    [(notp p) (vars p)]))
+
+;; inlist? :: String (Listof String) -> Boolean
+;; funcion que verifica si un string esta en una lista de strings
+(define (inlist? String List)
+    (match List
+        ['() #f]
+        [(cons x xs) (if (string=? x String) #t (inlist? String xs))]))
 
 #| Parte D |#
 
@@ -65,7 +80,8 @@
 
 (define (eval p env)
     (match p
-        [(varp n) (if (assoc n env) (cdr (assoc n env)) (error 'eval:"variable ~n is not defined in environment"))]
+        ;el error se muestra de la siguiente forma: (error "eval: variable a is not defined in environment")
+        [(varp n) (if (assoc n env) (cdr (assoc n env)) ((error (format "eval: variable ~a is not defined in environment" n))))]
         [(andp p q) (and (eval p) (eval q))]
         [(orp p q) (or (eval p) (eval q))]
         [(notp p) (not (eval p))]))
