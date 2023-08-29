@@ -106,19 +106,76 @@
 #| Parte A |#
 
 ;; simplify-negations :: Prop -> Prop
+;; funcion que simplifica las negaciones de una proposicion, es decir, elimina las dobles negaciones y las negaciones de and y or
+(define (simplify-negations p)
+    (match p
+        [(varp n) (varp n)]
+        [(andp p q) (andp (simplify-negations p) (simplify-negations q))]
+        [(orp p q) (orp (simplify-negations p) (simplify-negations q))]
+        [(notp p) (match p
+                        [(varp n) (notp (varp n))]
+                        [(andp p q) (orp (simplify-negations (notp p)) (simplify-negations (notp q)))]
+                        [(orp p q) (andp (simplify-negations (notp p)) (simplify-negations (notp q)))]
+                        [(notp p) (simplify-negations p)])]))
 
+; ejemplo de uso de simplify-negations
+;(simplify-negations (notp (notp (orp (varp "a") (andp (varp "b") (varp "c"))))))
+;(simplify-negations (notp (orp (varp "a") (varp "b"))))
 #| Parte B |#
 
 ;; distribute-and :: Prop -> Prop
+;; aplicar la distributividad de and cada vez que sea posible
+
+(define (distribute-and p)
+    (match p
+        [(varp n) (varp n)]
+        [(andp p q) (match (distribute-and p)
+                        [(orp p1 p2) (orp (distribute-and (andp p1 q)) (distribute-and (andp p2 q)))]
+                        [p (match (distribute-and q)
+                                [(orp q1 q2) (orp (distribute-and (andp p q1)) (distribute-and (andp p q2)))]
+                                [q (andp p q)])])]
+        [(orp p q) (orp (distribute-and p) (distribute-and q))]
+        [(notp p) (notp (distribute-and p))]))
+
+; ejemplo de uso de distribute-and
+
+;(distribute-and (orp (andp (varp "a") (varp "b")) (andp (varp "c") (varp "d"))))
+;(distribute-and (andp (orp (varp "p") (varp "q")) (varp "r")))
 
 #| Parte C |#
 
 ;; apply-until :: (a -> a) (a a -> Boolean) -> a -> a
+;; dada una funcion f y un predicado p, se retorna una funcion nueva. A esta nueva funcion se le da un
+;; elemento x, y se aplica f a x hasta que se cumpla p, es decir, se aplica f a x hasta que p f(x) sea true
+
+(define (apply-until f p)
+  (letrec
+      ((apply-rec
+        (lambda (x prev)
+          (if (p x prev)
+              x
+              (apply-rec (f x) x)))))
+    (lambda (x)
+      (apply-rec (f x) x))))
+
+ (( apply-until
+(\lambda (x) (/ x (add1 x)))
+(\lambda (x new-x) (<= (- x new-x) 0.1))) 1)
+
 
 #| Parte D |#
 
 ;; DNF :: Prop -> Prop
+;; dada una proposición, le aplica las transformaciones ya definidas tantas veces
+;; sea necesario para lograr la forma normal disyuntiva.
 
+(define (DNF p)
+    (apply-until (lambda (x) (distribute-and (simplify-negations x)))
+                 (lambda (x) (equal? x (distribute-and (simplify-negations x))))))
+; ejemplo de uso de DNF
+(DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+
+(DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
 
 
 #| P3 |#
