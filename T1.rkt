@@ -170,19 +170,28 @@
 ;; sea necesario para lograr la forma normal disyuntiva.
 
 (define (DNF p)
-    (apply-until (lambda (x) (distribute-and (simplify-negations x)))
-                 (lambda (x) (equal? x (distribute-and (simplify-negations x))))))
-; ejemplo de uso de DNF
-(DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
-
-(DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
-
+    (letrec
+        ((simplify-negations-rec (apply-until simplify-negations (lambda (x y) (equal? x y)))))
+        (letrec
+            ((distribute-and-rec (apply-until distribute-and (lambda (x y) (equal? x y)))))
+            (distribute-and-rec (simplify-negations-rec p)))))
 
 #| P3 |#
 
 #| Parte A |#
 
 ;; fold-prop :: (String -> a) (a a -> a) (a a -> a) (a -> a) -> Prop -> a
+;; funcion que captura el esquema de recursión de Prop
+(define (fold-prop varp andp orp notp)
+    (lambda (p)
+        (match p
+            [(varp n) (varp n)]
+            [(andp p q) (andp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
+            [(orp p q) (orp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
+            [(notp p) (notp (fold-prop varp andp orp notp p))])))
+
+;; ejemplo de uso de fold-prop
+
 
 #| Parte B |#
 

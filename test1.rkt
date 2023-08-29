@@ -34,3 +34,10 @@
 
 (test (tautology? (orp (varp "a") (notp (varp "a")))) #t)
 (test (tautology? (andp (varp "a") (notp (varp "a")))) #f)
+
+; ejemplo de uso de DNF
+(test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+(test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
