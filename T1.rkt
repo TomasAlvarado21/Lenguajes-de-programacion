@@ -80,7 +80,6 @@
 
 (define (eval p env)
     (match p
-        ;el error se muestra de la siguiente forma: (error "eval: variable a is not defined in environment")
         [(varp n) (if (assoc n env) (cdr (assoc n env)) ((error (format "eval: variable ~a is not defined in environment" n))))]
         [(andp p q) (and (eval p) (eval q))]
         [(orp p q) (or (eval p) (eval q))]
@@ -182,13 +181,13 @@
 
 ;; fold-prop :: (String -> a) (a a -> a) (a a -> a) (a -> a) -> Prop -> a
 ;; funcion que captura el esquema de recursión de Prop
-(define (fold-prop varp andp orp notp)
-    (lambda (p)
-        (match p
-            [(varp n) (varp n)]
-            [(andp p q) (andp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
-            [(orp p q) (orp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
-            [(notp p) (notp (fold-prop varp andp orp notp p))])))
+; (define (fold-prop varp andp orp notp)
+;     (lambda (p)
+;         (match p
+;             [(varp n) (varp n)]
+;             [(andp p q) (andp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
+;             [(orp p q) (orp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
+;             [(notp p) (notp (fold-prop varp andp orp notp p))])))
 
 ;; ejemplo de uso de fold-prop
 
