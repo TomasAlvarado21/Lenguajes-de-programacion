@@ -193,7 +193,6 @@
     (match p
         [(varp n) ()
 ;; ejemplo de uso de fold-prop
-(fold-prop (λ (n) (string-length n)) + + (λ (x) (add1 x)) (varp "hola"))
 
 
 #| Parte B |#
