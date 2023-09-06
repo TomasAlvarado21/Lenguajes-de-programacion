@@ -178,18 +178,22 @@
 #| P3 |#
 
 #| Parte A |#
-
+;; fold-bintree :: (Number -> A) (Number A A -> A) -> (Bintree -> A)
+;; fold over numeric binary trees
+(define (fold-bintree f g)
+ (λ (bt)
+ (match bt
+[(leaf v) (f v)]
+ [(in-node v l r) (g v
+ ((fold-bintree f g) l)
+ ((fold-bintree f g) r))])))
 ;; fold-prop :: (String -> a) (a a -> a) (a a -> a) (a -> a) -> Prop -> a
-;; funcion que captura el esquema de recursión de Prop
-; (define (fold-prop varp andp orp notp)
-;     (lambda (p)
-;         (match p
-;             [(varp n) (varp n)]
-;             [(andp p q) (andp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
-;             [(orp p q) (orp (fold-prop varp andp orp notp p) (fold-prop varp andp orp notp q))]
-;             [(notp p) (notp (fold-prop varp andp orp notp p))])))
-
+;; funcion que captura el esquema de recursión de Prop, tiene que hacerse en base a la funcion fold-bintree de arriba
+(define (fold-prop varp andp orp notp p)
+    (match p
+        [(varp n) ()
 ;; ejemplo de uso de fold-prop
+(fold-prop (λ (n) (string-length n)) + + (λ (x) (add1 x)) (varp "hola"))
 
 
 #| Parte B |#
