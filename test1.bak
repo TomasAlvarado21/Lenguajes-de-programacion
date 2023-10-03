@@ -32,12 +32,49 @@
 (test (eval (varp "a") ( list (cons "a" #f))) #f)
 (test/exn (eval (varp "a") ( list )) "eval: variable a is not defined in environment")
 
+;; test de tautology?
 (test (tautology? (orp (varp "a") (notp (varp "a")))) #t)
 (test (tautology? (andp (varp "a") (notp (varp "a")))) #f)
 
-; ejemplo de uso de DNF
+; test de DNF
 (test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
 (orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
 
 (test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
 (orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+
+;; test de apply-until
+(test ((apply-until
+(\lambda (x) (/ x (add1 x)))
+(\lambda (x new-x) (<= (- x new-x) 0.1))) 1) 0.5)
+
+
+;; test de ocurrences-2
+(test (occurrences-2 (varp "a") "b") 0)
+(test (occurrences-2 (andp (varp "a") (varp "b")) "a") 1)
+
+;; test de vars-2
+(test (vars-2 (varp "a")) ( list "a"))
+(test (vars-2 (andp (varp "a") (varp "b"))) (list "a" "b"))
+
+;; test de eval-2
+(test (eval-2 (varp "a") ( list (cons "a" #t))) #t)
+(test (eval-2 (varp "a") ( list (cons "a" #f))) #f)
+(test/exn (eval-2 (varp "a") ( list )) "eval: variable a is not defined in environment")
+
+;; test de simplify-negations-2
+(test (simplify-negations-2 (notp (notp (varp "a")))) (varp "a"))
+(test (simplify-negations-2 (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+(test (simplify-negations-2 (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+
+;; test de distribute-and-2
+(test (distribute-and-2 (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+
+(test (distribute-and-2 (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d")))) 
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+;; test de fold-prop
+(fold-prop (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))

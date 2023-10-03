@@ -180,29 +180,74 @@
 #| Parte A |#
 ;; fold-bintree :: (Number -> A) (Number A A -> A) -> (Bintree -> A)
 ;; fold over numeric binary trees
-(define (fold-bintree f g)
- (λ (bt)
- (match bt
-[(leaf v) (f v)]
- [(in-node v l r) (g v
- ((fold-bintree f g) l)
- ((fold-bintree f g) r))])))
+; (define (fold-bintree f g)
+;  (λ (bt)
+;  (match bt
+; [(leaf v) (f v)]
+;  [(in-node v l r) (g v
+;                       ((fold-bintree f g) l)
+;                       ((fold-bintree f g) r))])))
+
+
 ;; fold-prop :: (String -> a) (a a -> a) (a a -> a) (a -> a) -> Prop -> a
 ;; funcion que captura el esquema de recursión de Prop, tiene que hacerse en base a la funcion fold-bintree de arriba
 (define (fold-prop varp andp orp notp p)
     (match p
-        [(varp n) ()
-;; ejemplo de uso de fold-prop
+        [(varp n) (f-varp n)]
+        [(andp p q) (f-andp ((fold-prop varp andp orp notp) p) ((fold-prop varp andp orp notp) q))]
+        [(orp p q) (f-orp ((fold-prop varp andp orp notp) p) ((fold-prop varp andp orp notp) q))]
+        [(notp p) (f-notp ((fold-prop varp andp orp notp) p))]))
+
+
 
 
 #| Parte B |#
+;; Ahora todas las funciones siguientes se pueden definir en base a fold-prop
 
 ;; occurrences-2 :: Prop String -> Number
+;; funcion que devuelve la cantidad de veces que aparece una variable en una proposicion
+(define (occurrences-2 p String)
+    (fold-prop (lambda (n) (if (string=? n String) 1 0))
+               (lambda (p q) (+ p q))
+               (lambda (p q) (+ p q))
+               (lambda (p) p)
+               p))
 
 ;; vars-2 :: Prop -> (Listof String)
+;; funcion que devuelve una lista con todos los nombres de variables que ocurren en la proposicion
+(define (vars-2 p)
+    (fold-prop (lambda (n) (list n))
+               (lambda (p q) (append p (filter (lambda (x) (not (inlist? x p))) q)))
+               (lambda (p q) (append p (filter (lambda (x) (not (inlist? x p))) q)))
+               (lambda (p) p)
+               p))
 
 ;; eval-2 :: Prop (Listof (Pair String Boolean)) -> Boolean
-
+;; funcion que evalua una proposicion p, obteniendo los valores de cada varaibles desde un ambiente env, devolviendo
+(define (eval-2 p env)
+    (fold-prop (lambda (n) (if (assoc n env) (cdr (assoc n env)) ((error (format "eval: variable ~a is not defined in environment" n))))) 
+               (lambda (p q) (and p q))
+               (lambda (p q) (or p q))
+               (lambda (p) (not p))
+               p))
 ;; simplify-negations-2 :: Prop -> Prop
+;; funcion que simplifica las negaciones de una proposicion, es decir, elimina las dobles negaciones y las negaciones de and y or
+(define (simplify-negations-2 p)
+    (fold-prop (lambda (n) (varp n))
+               (lambda (p q) (andp p q))
+               (lambda (p q) (orp p q))
+               (lambda (p) (notp p))
+               p))
 
 ;; distribute-and-2 :: Prop -> Prop
+;; aplicar la distributividad de and cada vez que sea posible
+(define (distribute-and-2 p)
+    (fold-prop (lambda (n) (varp n))
+               (lambda (p q) (match p
+                                [(orp p1 p2) (orp (distribute-and-2 (andp p1 q)) (distribute-and-2 (andp p2 q)))]
+                                [p (match q
+                                        [(orp q1 q2) (orp (distribute-and-2 (andp p q1)) (distribute-and-2 (andp p q2)))]
+                                        [q (andp p q)])]))
+               (lambda (p q) (orp p q))
+               (lambda (p) (notp p))
+               p))

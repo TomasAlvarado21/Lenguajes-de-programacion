@@ -1,0 +1,96 @@
+#lang play
+(require "T1.rkt")
+
+(print-only-errors #t)
+
+;; B) occurrences
+(test (occurrences (varp "a") "b") 0)
+(test (occurrences (andp (varp "a") (varp "b")) "a") 1)
+(test (occurrences (andp (varp "a") (varp "a")) "a") 2)
+
+;; C) vars
+
+(test (vars (varp "a")) ( list "a"))
+(test (vars (andp (varp "a") (varp "b"))) (list "a" "b"))
+(test (vars (andp (varp "a") (varp "a"))) (list "a"))
+
+;; D) all-envs
+
+(test (all-environments ( list )) ( list ( list )))
+(test (all-environments ( list "a")) ( list
+( list (cons "a" #t))
+( list (cons "a" #f)))
+)
+(test (all-environments ( list "a" "b"))
+( list ( list (cons "a" #t) (cons "b" #t))
+( list (cons "a" #t) (cons "b" #f))
+( list (cons "a" #f) (cons "b" #t))
+( list (cons "a" #f) (cons "b" #f))))
+
+;; E) eval
+(test (eval (varp "a") ( list (cons "a" #t))) #t)
+(test (eval (varp "a") ( list (cons "a" #f))) #f)
+(test/exn (eval (varp "a") ( list )) "eval: variable a is not defined in environment")
+
+;; test de tautology?
+(test (tautology? (orp (varp "a") (notp (varp "a")))) #t)
+(test (tautology? (andp (varp "a") (notp (varp "a")))) #f)
+
+;; test de simplify-negations-2
+(test (simplify-negations (notp (notp (varp "a")))) (varp "a"))
+(test (simplify-negations (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+(test (simplify-negations (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+
+;; test de distribute-and
+(test (distribute-and (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+
+(test (distribute-and (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d")))) 
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+;; test de apply-until
+(test ((apply-until
+(\lambda (x) (/ x (add1 x)))
+(\lambda (x new-x) (<= (- x new-x) 0.1))) 1) 0.5)
+
+
+
+
+; test de DNF
+(test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+(test (DNF (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+
+
+;; test de fold-prop
+;; ya que esta funcion se ocupa en las funciones siguientes, y estas funcionan de manera correcta, se asume que esta funcion tambien funciona de manera correcta
+
+;; test de ocurrences-2
+(test (occurrences-2 (varp "a") "b") 0)
+(test (occurrences-2 (andp (varp "a") (varp "b")) "a") 1)
+
+;; test de vars-2
+(test (vars-2 (varp "a")) ( list "a"))
+(test (vars-2 (andp (varp "a") (varp "b"))) (list "a" "b"))
+
+;; test de eval-2
+(test (eval-2 (varp "a") ( list (cons "a" #t))) #t)
+(test (eval-2 (varp "a") ( list (cons "a" #f))) #f)
+(test/exn (eval-2 (varp "a") ( list )) "eval: variable a is not defined in environment")
+
+;; test de simplify-negations-2
+(test (simplify-negations-2 (notp (notp (varp "a")))) (varp "a"))
+(test (simplify-negations-2 (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+(test (simplify-negations-2 (notp (notp (notp (varp "a"))))) (notp (varp "a")))
+
+;; test de distribute-and-2
+(test (distribute-and-2 (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d"))))
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
+
+
+(test (distribute-and-2 (andp (orp (varp "a") (varp "b")) (orp (varp "c") (varp "d")))) 
+(orp (orp (andp (varp "a") (varp "c")) (andp (varp "a") (varp "d"))) (orp (andp (varp "b") (varp "c")) (andp (varp "b") (varp "d")))))
