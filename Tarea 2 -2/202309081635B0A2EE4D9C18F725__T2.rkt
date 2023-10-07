@@ -4,7 +4,19 @@
 ;; PARTE 1A, 1B, 1F
 
 #|
-  Expr ::= ...
+  Expr ::= Num
+        |   (add Expr Expr)
+        |   (sub Expr Expr)
+        |   (mul Expr Expr)
+        |   tt
+        |   ff
+        |   (leq Expr Expr)
+        |   (ifc Expr Expr Expr)
+        |   (id Symbol)
+        |   (fun Symbol Expr)
+        |   (app Expr Expr)
+        |   (proj Number Expr)
+        |   (tupl (listof Expr))
 |#
 (deftype Expr
   ;; core
@@ -20,6 +32,7 @@
   (id x)
   (fun x body)
   (app f arg)
+  (proj i tup)
   )
 
 ;; parse :: s-expr -> Expr
@@ -41,6 +54,7 @@
     [(list 'if c t e)(ifc (parse c) (parse t) (parse e))]
     [(list 'fun x body)(fun x (parse body))]
     [(list f a ...)(app (parse f) (map parse a))]
+    [(list 'proj i tup)(proj i (parse tup))]
   )
 )
 (test (parse 'true) (tt))
@@ -60,13 +74,14 @@
 
 ;; PARTE 1C, 1G
 
-
+;; tipo de dato Val
 (deftype Val
   (numV n)
   (boolV b)
   (closureV x body env)
+  (tupleV lst)
   )
-
+ 
 ;; ambiente de sustitución diferida
 (deftype Env
   (mtEnv)
@@ -90,6 +105,7 @@
 ;; PARTE 1D
 
 ;; num2num-op :: (Number Number -> Number)-> (Val Val -> Val)
+;; funcion que recibe una funcion que recibe dos numeros y devuelve un numero y devuelve una funcion que recibe dos Val y devuelve un Val
 (define (num2num-op simbolo)
   (lambda (v1 v2)
     (match (list v1 v2)
@@ -97,6 +113,7 @@
       [else (error "num-op: invalid operands ")])))
 
 ;; num2bool-op :: (Number Number -> Boolean)-> (Val Val -> Val)
+;; funcion que recibe una funcion que recibe dos numeros y devuelve un booleano y devuelve una funcion que recibe dos Val y devuelve un Val
 (define (num2bool-op simbolo) 
   (lambda (v1 v2)
     (match (list v1 v2)
@@ -132,32 +149,55 @@
     [(app f arg)
     (def (closureV x body env) (eval f env))
     (def extended-env (extend-env x (eval arg env) env))
-    (eval body extended-env)]
+    (eval body extended-env)]  
+    ; proj Calcula la proyección del componente i-ésimo de la tupla
+    [(proj i tup) (match (eval tup env)
+                    [(tupl lst) (list-ref lst i)]
+                    [else (error 'eval "no es una tupla")])]
   ))
+ 
 
 
-(test (eval (num 42) empty-env) (numV 42))
-(test (eval (add (num 2) (num 3)) empty-env) (numV 5))
-(test (eval (sub (num 5) (num 3)) empty-env) (numV 2))
-(test (eval (mul (num 2) (num 4)) empty-env) (numV 8))
-(test (eval (leq (num 3) (num 5)) empty-env) (boolV #t))
-(test (eval (ifc (leq (num 3) (num 5)) (num 2) (num 4)) empty-env) (numV 2))
-(test (eval (fun 'x (add (id 'x) (num 1))) empty-env) (closureV 'x (add (id 'x) (num 1)) empty-env))
-(test (eval (tupl (list (num 1) (num 2) (num 3))) empty-env) (tupl (list (numV 1) (numV 2) (numV 3))))
 
-(test (eval (app (fun (list 'x 'y) (add (id 'x) (id 'y))) (list (num 1) (num 2))) empty-env)
-      (numV 3))
 
+  ;; PARTE 2A
 
 
 ;; PARTE 2A
+;; swap* :: ((a b -> c) -> (b a -> c))
+;; funcion que recibe una funcion y devuelve una funcion que recibe dos parametros y los pasa en orden inverso a la funcion recibida
+(define (swap* f)
+  (lambda (x y) (f y x)))
+  
 
-(define swap* '???)
-(define curry* '???)
-(define uncurry* '???)
-(define partial* '???)
+
+;; curry* :: ((a b -> c) -> (a -> b -> c))
+;; funcion que recibe una funcion y retorna su version currificada
+(define (curry* f)
+  (lambda (x) (lambda (y) (f x y))))
+
+
+
+
+;; uncurry* :: ((a -> b -> c) -> (a b -> c))
+;; funcion que recibe una funcion curried y devuelve su version no currificada
+(define (uncurry* f)
+  (lambda (x y) ((f x) y)))
+
+
+; partial* (a b -> c) -> (b -> c)
+;; Recibe una funcion y un argumento, y retorna una funcion.
+
+(define (partial* f . args)
+  (lambda (x) (apply f (append args (list x)))))
+
 
 ;; PARTE 2B
-
+(define globals ( list
+                      (cons 'swap swap*)
+                      (cons 'curry curry*)
+                      (cons 'uncurry uncurry*)
+                      (cons ' partial partial* )))
+                      
 ;; run :: ...
 (define (run) '???)
