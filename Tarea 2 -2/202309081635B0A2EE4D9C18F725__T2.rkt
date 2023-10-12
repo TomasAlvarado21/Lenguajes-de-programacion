@@ -147,7 +147,7 @@
     [(id x)(env-lookup x env)]
     [(fun x body) (closureV x body env)]
     [(app f arg)
-    (def (closureV x body env) (eval f env))
+    (def (closureV x body fenv) (eval f env))
     (def extended-env (extend-env x (eval arg env) env))
     (eval body extended-env)]  
     ; proj Calcula la proyección del componente i-ésimo de la tupla
