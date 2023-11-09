@@ -22,12 +22,23 @@
 
 #| BEGIN P1 |#
 
-;; Type ::= ...
-; (deftype Type ...)
+;; Type ::= <numT>
+;;         
+(deftype Type 
+  (numT)
+  (arrowT T1 T2) ; (arrowT <Type> <Type>)
+  )
+
 
 ;; parse-type : ...
-(define (parse-type t) '???)
+(define (parse-type t) 
+  (match t
+    ['Number (numT)]
+    [(list '-> l r) (arrowT (parse-type l) (parse-type r))]
+    [_ (error 'parse-type "invalid type: ~a" t)]))
 
+(test (parse-type 'Number) (numT))
+;; entrega numT
 ;; parse : s-expr -> Expr
 (define (parse s)
   (match s
