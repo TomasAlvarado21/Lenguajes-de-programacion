@@ -169,6 +169,12 @@
 (deftype Kont
   (mt-k) ; empty kont
   (binop-l-k op r env kont)
+  (binop-r-k op l env kont)
+  (ifc-k t e kont)
+  (arg-k arg env kont)
+  (app-k arg kont)
+  ; fun-k recibe 3 argumentos: binder, binderType, body
+  (fun-k binder binderType body)
   )
 
 (define empty-kont (mt-k))
@@ -176,6 +182,7 @@
 ;; State ::= (<Expr>, <Env>, <Kont>)
 (deftype State
   (st expr env kont)
+
   )
 
 ;; inject : Expr -> State
@@ -189,32 +196,39 @@
 ;;  recibe un estado de la maquina CEK, y produce uno nuevo. no es recursiva ni llama a eval
 (define (step c) 
   (match c
-    [(st (num n) env kont) (match kont
-                             [(mt-k) (st (num n) env kont)]
-                             [(binop-l-k op r env kont) (st r env (binop-r-k op n kont))])]
-    [(st (binop op l r) env kont) (st l env (binop-l-k op r env kont))]
+    ;id 
     [(st (id x) env kont) (st (env-lookup x env) env kont)]
-    [(st (fun binder binderType body) env kont) (st (fun binder binderType body) env kont)]
+    [(st (num n) env kont) (match kont
+                              [(mt-k) (st (num n) env kont)]
+                              [(binop-l-k op r env kont) (st (match op
+                                                              ['+ (num+ (num n) r)]
+                                                              ['- (num- (num n) r)]
+                                                              ['* (num* (num n) r)]
+                                                              ['<= (bool (<= n r))]) env kont)]
+                              [(binop-r-k op l env kont) (st l env (binop-l-k op (num n) env kont))])]
+                              
+    [(st (bool b) env kont) (match kont
+                              [(mt-k) (st (bool b) env kont)]
+                              [(binop-l-k op r env kont) (st r env (binop-r-k op b env kont))]
+                              [(binop-r-k op l env kont) (st (bool (op l b)) env kont)])]
+    [(st (fun binder binderType body) env kont) (st (fun-k binder binderType body) env kont)]
+    [(st (fun-k binder binderType body) env kont) (st (fun binder binderType body) env kont)]
+    [(st (id x) env kont) (st (env-lookup x env) env kont)]
+    
+    [(st (binop op l r) env kont) (st l env (binop-r-k op r env kont))]
+
+    ; [(st (binop-l-k op l r) env kont) (st l env (binop-l-k op r env kont))]
+
+    
     [(st (tt) env kont) (st (tt) env kont)]
     [(st (ff) env kont) (st (ff) env kont)]
-    [(st (ifc c t e) env kont) (st c env (ifc-k t e env kont))]
-    [(st (app callee arg) env kont) (st callee env (app-k arg env kont))]
-    [(st (leq l r) env kont) (st l env (leq-l-k r env kont))]
-    [(st (binop '+ l r) env kont) (st l env (binop-l-k '+ r env kont))]
-    [(st (binop '- l r) env kont) (st l env (binop-l-k '- r env kont))]
-    [(st (binop '* l r) env kont) (st l env (binop-l-k '* r env kont))]
-    [(st (binop '<= l r) env kont) (st l env (binop-l-k '<= r env kont))]
-
-    [(st (ifc (tt) t e) env kont) (st t env kont)]
-    [(st (ifc (ff) t e) env kont) (st e env kont)]
-    [(st (ifc c t e) env kont) (st c env (ifc-k t e env kont))]
-    [(st (app (fun binder binderType body) arg) env kont) (st body (extend-env binder arg env) kont)]
-    [(st (leq (num n) (num m)) env kont) (st (ifc (binop '<= (num n) (num m)) (tt) (ff)) env kont)]
-
-    [(st (app 
-    [(st (leq-l r env kont) env kont) (match kont
-                                          [(mt-k) (st r env kont)]
-                                          [(binop-l-k op r env kont) (st r env (binop-l-k op r env kont))])]
+    [(st (ifc c t e) env kont) (st c env (ifc-k t e kont))]
+    [(st (app callee arg) env kont) (st callee env (arg-k arg env kont))]
+    [(st (ifc-k t e kont) env kont) (match t
+                                      [(tt) (st t env kont)]
+                                      [(ff) (st e env kont)]
+                                      [_ (error 'step "if condition must be a boolean")])]
+    [(st (app-k arg kont) env kont) (st arg env kont)]
     
     
     
@@ -222,16 +236,18 @@
 
 
 
+
 ;; eval : Expr -> Expr
-; (define (eval expr)
-;   (define (eval-until-final state)
-;     (def (st expr _ kont) state)
-;     (if (and (final? expr) (mt-k? kont))
-;         expr
-;         (eval-until-final (step state))))
-;   (eval-until-final (inject expr)))
+(define (eval expr)
+  (define (eval-until-final state)
+    (def (st expr _ kont) state)
+    (if (and (final? expr) (mt-k? kont))
+        expr
+        (eval-until-final (step state))))
+  (eval-until-final (inject expr)))
 
 ;; run : s-expr -> Expr
 ;; corre el programa
-; (define (run s-expr) 
-;   (eval (parse s-expr)))
+(define (run s-expr) 
+  (eval (parse s-expr)))
+;(run ' (+ 1 2))

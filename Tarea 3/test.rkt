@@ -4,11 +4,11 @@
 (print-only-errors #t)
 
 
-(parse-type 'Number)
+(test (parse-type 'Number) (numT))
 
-(parse-type ' (-> Number Number))
+(test (parse-type ' (-> Number Number)) (arrowT (numT) (numT)))
 
-(parse-type ' (-> (-> Number Number) Number))
+(test (parse-type ' (-> (-> Number Number) Number)) (arrowT (arrowT (numT) (numT)) (numT)))
 
 (test (parse-type 'Number) (numT))
 (test (parse-type 'Boolean) (boolT))
@@ -33,6 +33,22 @@
 
 
 
-(final? (num 1))
-(final? (fun 'x (numT) (id 'x)))
-(final? (binop '+ (num 1) (num 2)))
+(test (final? (num 1)) #t)
+(test (final? (fun 'x (numT) (id 'x))) #t)
+(test (final? (binop '+ (num 1) (num 2))) #f)
+
+(test (step (st (binop '+ (num 1) (num 2)) (mtEnv) (mt-k))) (st (num 1) (mtEnv) (binop-r-k '+ (num 2) (mtEnv) (mt-k)))) 
+(test (step (st (num 1) (mtEnv) (binop-r-k '+ (num 2) (mtEnv) (mt-k)))) (st (num 2) (mtEnv) (binop-l-k '+ (num 1) (mtEnv) (mt-k))))
+(test (step (st (num 2) (mtEnv) (binop-l-k '+ (num 1) (mtEnv) (mt-k)))) (st (num 3) (mtEnv) (mt-k)))
+
+(test (step (st (app (fun 'x (numT) (id 'x)) (num 2)) (mtEnv) (mt-k))) (st (fun 'x (numT) (id 'x)) (mtEnv) (arg-k (num 2)(mtEnv)(mt-k))))
+
+;; primer step
+(test (step (st (app (fun 'x (numT) (id 'x)) (num 2))
+(mtEnv)
+(mt-k))) 
+(st (fun 'x (numT) (id 'x)) (mtEnv) (arg-k (num 2)
+(mtEnv)
+(mt-k))))
+
+
