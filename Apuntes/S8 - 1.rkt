@@ -217,9 +217,7 @@
 ; Haskell usa call by need (cachea los resultados de las funciones)
 
 ; call by value: evaluacion temprana
-; esto es que si se evalua una expresion, se evalua una sola vez y se guarda el resultado
-; esto es util para evitar loops infinitos o para evitar evaluar expresiones mas de una vez
-; pero se evalua antes de la llamada a la funcion
+; esto es que se evalua la expresion cada vez que se la llama
 
 
 ; Scala usa los 3 tipos de evaluacion
@@ -234,7 +232,7 @@
 
 
 ; while(i < 10) (print(i) , i ++)
-; para esta funcion en una evalicion call by value se evalua el cond solo una vez y se guarda en el caché,
+; para esta funcion en una evalicion call by need se evalua el cond solo una vez y se guarda en el caché,
 ; por lo que si el cond es True, se evalua el body pero se quedaria en un loop infinito y se imprimirá solo una vez
 
 ; en Scala el cond en vez de ser Bool es una funcion que devuelve un Bool(=> Bool) (call by name) 
