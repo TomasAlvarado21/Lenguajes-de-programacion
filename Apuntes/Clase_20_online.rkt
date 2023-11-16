@@ -19,7 +19,7 @@
   (fun arg body)     ;; -- call-by-value
   (refun arg body)   ;; -- call-by-reference
   (app f-name f-arg)
-  (set id val-expr)
+  (set id val-expr)  ;; 
   ;(newbox val-expr)
   ;(openbox box-expr)
   ;(setbox box-expr val-expr)
@@ -142,14 +142,14 @@
        )]
 
     [(seqn expr1 expr2)
-     (def (v*s _ sto1) (interp expr1 env sto))
-     (interp expr2 env sto1)]
+     (def (v*s _ sto1) (interp expr1 env sto)) ;; aqui interpreta la primera expresion, guardando solo el store pq no nos interesa guardar el valor
+     (interp expr2 env sto1)] ;; aqui interpretamos el segundo expr con el store que hicimos update anterior 
 
-    [(set id val-expr)
-     (def (v*s val-val val-sto) (interp val-expr env sto))
-     (def loc (lookup-env id env))
+    [(set id val-expr) ;; asigna un valor a una variable
+     (def (v*s val-val val-sto) (interp val-expr env sto)) ;; primero interpreta el valor y lo asigna a val en el value*store  
+     (def loc (lookup-env id env)) ;; busca la locación de la variable en el ambiente
      (v*s val-val
-          (extend-sto loc val-val val-sto))]
+          (extend-sto loc val-val val-sto))] ;; extiende el store con la nueva locación y el valor v   
 
     #|
     [(newbox val-expr)
@@ -185,14 +185,14 @@
                         {seqn {f v} v}}})
 
 (define p4 '{with {v 0}
-                  {with {f {fun {y} {set v 5}}}
+                  {with {f {fun {y} {set y 5}}}
                         {seqn {f v} v}}})
 
 (define p5 '{with {v 0}
                   {with {f {refun {y} {set y 5}}}
                         {seqn {f v} v}}})
 
-
+(run p4)
 #|
 {with {f {fun {a {ref b}}
              {seq {set a 5}
