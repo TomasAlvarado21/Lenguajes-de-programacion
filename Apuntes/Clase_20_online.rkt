@@ -105,7 +105,7 @@
   (match expr
     [(num n) (v*s (numV n) sto)]
     [(id x) (v*s (lookup-sto (lookup-env x env) sto) sto)]    
-    [(fun id body) (v*s (closureV id body env) sto)]
+    [(fun id body) (v*s (closureV id body env) sto)]  
     [(refun id body) (v*s (refclosureV id body env) sto)]
     
     [(if0 c t f)
@@ -185,14 +185,14 @@
                         {seqn {f v} v}}})
 
 (define p4 '{with {v 0}
-                  {with {f {fun {y} {set y 5}}}
+                  {with {f {fun {y} {set y  5}}}
                         {seqn {f v} v}}})
 
 (define p5 '{with {v 0}
                   {with {f {refun {y} {set y 5}}}
                         {seqn {f v} v}}})
-
-(run p4)
+(run p4) ;; CBV
+(run p5) ;; CBR
 #|
 {with {f {fun {a {ref b}}
              {seq {set a 5}
