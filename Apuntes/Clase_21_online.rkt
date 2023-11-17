@@ -83,7 +83,6 @@
     [(list) (append acc L2)]
     [(cons x rest) (inter-aux L2 rest (append acc (list x)))]))
 
-(define (inter-xd L1 L2 acc)
 
 
 
